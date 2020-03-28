@@ -1,0 +1,69 @@
+{{define "content"}}
+    <div class="p-4" style="background-color: #e9ecef">
+        <h3 class="text-center mb-4">{{if eq .addEdit "edit" }}Edit{{else if eq .addEdit "add" }}Add{{end}} Host Entry</h3>
+            <form id="edithostform" action="javascript:void(0);">
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">Hostname:</div>
+                <div class="col-8 input-group">
+                    <input type="text" class="form-control" placeholder="Enter hostname" name="hostname" value="{{.host.Hostname}}" {{if eq .addEdit "edit" }}readonly{{end}}>
+                    <div class="input-group-append">
+                        <span class="input-group-text" id="basic-addon2">.{{.config.Domain}}</span>
+                    </div>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">IP Address:</div>
+                <div class="col-8"><input type="text" class="form-control" placeholder="Enter IP Address" name="ip" value="{{.host.Ip}}"></div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">TTL:</div>
+                <div class="col-8">
+                    <select class="form-control" name="ttl">
+                        <option value="20" {{if .host.Ttl }}{{if eq .host.Ttl 20 }}selected{{end}}{{end}}>20 s.  Super dynamic DNS for frequent updates</option>
+                        <option value="60" {{if .host.Ttl }}{{if eq .host.Ttl 60 }}selected{{end}}{{end}}>60 s.  Default dynamic DNS value</option>
+                        <option value="3600" {{if .host.Ttl }}{{if eq .host.Ttl 3600 }}selected{{end}}{{end}}>1 hr.  Rarely updated IP address</option>
+                        <option value="14400" {{if .host.Ttl }}{{if eq .host.Ttl 14400 }}selected{{end}}{{end}}>4 hrs. Static record with benefits of DNS caching</option>
+                    </select>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">Username:</div>
+                <div class="col-8 input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('username')"><img src="/static/icons/clipboard.svg" style="vertical-align: baseline" alt="" width="16" height="16" title="Copy"></button>
+                    </div>
+                    <input type="text" class="form-control" placeholder="Enter username" name="username" id="username" value="{{.host.UserName}}">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="generateUsername()">Generate</button>
+                    </div>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">Password:</div>
+                <div class="col-8 input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('password')"><img src="/static/icons/clipboard.svg" style="vertical-align: baseline" alt="" width="16" height="16" title="Copy"></button>
+                    </div>
+                    <input type="text" class="form-control" placeholder="Enter password" name="password" id="password" value="{{.host.Password}}">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="generatePassword()">Generate</button>
+                    </div>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-11 d-flex justify-content-end"><button class="btn btn-primary" onclick="addEditHost({{.host.ID}}, {{.addEdit}})">{{if eq .addEdit "edit" }}Edit{{else if eq .addEdit "add" }}Add{{end}} Host Entry</button></div>
+                <div class="col-1"></div>
+            </div>
+        </form>
+    </div>
+{{end}}

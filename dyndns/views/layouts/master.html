@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/static/icons/favicon.ico">
+
+    <title>Narrow Jumbotron Template for Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="/static/css/narrow-jumbotron.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="container">
+    <!-- Navigation -->
+    <div class="header clearfix">
+        <nav>
+            <ul class="nav nav-pills float-right">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/hosts">Hosts <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logs">Logs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="" onclick="logOut()">Logout</a>
+                </li>
+            </ul>
+        </nav>
+        <h3 class="text-muted">TheBBCloud DynDNS</h3>
+    </div>
+
+    <!-- Page Content -->
+    {{template "content" .}}
+
+    <footer class="footer">
+        <p>&copy; TheBBCloud 2020</p>
+    </footer>
+
+</div> <!-- /container -->
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="/static/js/ie10-viewport-bug-workaround.js"></script>
+<script src="/static/js/jquery-3.4.1.min.js"></script>
+<script src="/static/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/additional.js"></script>
+</body>
+</html>

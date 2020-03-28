@@ -1,0 +1,4 @@
+DDNS_ADMIN_LOGIN=admin:$$3$$abcdefg
+DDNS_DOMAIN=dyndns.example.com
+DDNS_PARENT_NS=ns.example.com
+DDNS_DEFAULT_TTL=3600

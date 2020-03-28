@@ -1,0 +1,17 @@
+version: '3'
+services:
+  ddns:
+    image: bbaerthlein/docker-ddns-server:latest
+    restart: always
+    environment:
+      DDNS_ADMIN_LOGIN: 'admin:$$3$$abcdefg'
+      DDNS_DOMAIN: 'dyndns.example.com'
+      DDNS_PARENT_NS: 'ns.example.com'
+      DDNS_DEFAULT_TTL: '3600'
+    ports:
+      - "53:53"
+      - "53:53/udp"
+      - "8080:8080"
+    volumes:
+       - ./bind-data:/var/cache/bind
+       - ./database:/root/dyndns/database

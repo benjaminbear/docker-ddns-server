@@ -1,0 +1,20 @@
+dist: bionic
+
+language: go
+
+env: GO111MODULE=on
+
+go:
+    - 1.13.x
+    - 1.14.x
+
+git:
+    depth: 1
+
+script:
+    - go test -v ./...
+
+notifications:
+    email:
+        on_success: change
+        on_failure: always
