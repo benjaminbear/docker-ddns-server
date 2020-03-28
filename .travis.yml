@@ -12,7 +12,9 @@ git:
     depth: 1
 
 script:
+    - cd dyndns
     - go test -v ./...
+    - go build ./...
 
 notifications:
     email:
