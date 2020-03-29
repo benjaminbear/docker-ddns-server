@@ -9,10 +9,11 @@
 
 With docker-ddns-server you can setup your own dynamic DNS server. This project is inspired by https://github.com/dprandzioch/docker-ddns . In addition to the original version, you can setup and maintain your dyndns entries via simple web ui.
 
-
-![docker-ddns-server web ui](https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/addhost.png)
-![docker-ddns-server web ui](https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/listhosts.png)
-![docker-ddns-server web ui](https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/listlogs.png)
+<p float="left">
+<img src="https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/addhost.png" width="285">
+<img src="https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/listhosts.png" width="285">
+<img src="https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/listlogs.png" width="285">
+</p>
 
 ## Installation
 
