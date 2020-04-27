@@ -8,7 +8,7 @@
                 <th>IP</th>
                 <th>TTL</th>
                 <th>LastUpdate</th>
-                <th><button class="btn btn-primary" onclick="location.href='/hosts/add'">Add Host Entry</button></th>
+                <th><button class="addHost btn btn-primary">Add Host Entry</button></th>
             </tr>
             </thead>
             <tbody>
@@ -18,7 +18,7 @@
                     <td>{{.Ip}}</td>
                     <td>{{.Ttl}}</td>
                     <td>{{.LastUpdate.Format "01/02/2006 15:04 MEZ"}}</td>
-                    <td><button onclick="location.href='/hosts/edit/{{.ID}}'" class="btn btn-outline-secondary btn-sm"><img src="/static/icons/pencil.svg" alt="" width="16" height="16" title="Edit"></button>&nbsp;<button class="btn btn-outline-secondary btn-sm" onclick="deleteHost('{{.ID}}')"><img src="/static/icons/trash.svg" alt="" width="16" height="16" title="Delete"></button> <button class="btn btn-outline-secondary btn-sm" onclick="location.href='/logs/host/{{.ID}}'"><img src="/static/icons/table.svg" alt="" width="16" height="16" title="Logs"></button></td>
+                    <td><button id="{{.ID}}" class="editHost btn btn-outline-secondary btn-sm"><img src="/static/icons/pencil.svg" alt="" width="16" height="16" title="Edit"></button>&nbsp;<button id="{{.ID}}" class="deleteHost btn btn-outline-secondary btn-sm"><img src="/static/icons/trash.svg" alt="" width="16" height="16" title="Delete"></button> <button id="{{.ID}}" class="showHostLog btn btn-outline-secondary btn-sm"><img src="/static/icons/table.svg" alt="" width="16" height="16" title="Logs"></button></td>
                 </tr>
             {{end}}
             </tbody>

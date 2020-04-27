@@ -4,6 +4,7 @@
 ![Docker build status](https://img.shields.io/docker/cloud/build/bbaerthlein/docker-ddns-server)
 ![Docker build automated](https://img.shields.io/docker/cloud/automated/bbaerthlein/docker-ddns-server)
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/benjaminbear/docker-ddns-server)
 ![Go version](https://img.shields.io/github/go-mod/go-version/benjaminbear/docker-ddns-server?filename=dyndns%2Fgo.mod)
 ![License](https://img.shields.io/github/license/benjaminbear/docker-ddns-server)
 

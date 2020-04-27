@@ -1,7 +1,7 @@
 {{define "content"}}
     <div class="p-4" style="background-color: #e9ecef">
         <h3 class="text-center mb-4">{{if eq .addEdit "edit" }}Edit{{else if eq .addEdit "add" }}Add{{end}} Host Entry</h3>
-            <form id="edithostform" action="javascript:void(0);">
+            <form id="editHostForm" action="javascript:void(0);">
             <div class="row mt-3">
                 <div class="col-1"></div>
                 <div class="col-2 text-right">Hostname:</div>
@@ -37,11 +37,11 @@
                 <div class="col-2 text-right">Username:</div>
                 <div class="col-8 input-group">
                     <div class="input-group-prepend">
-                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('username')"><img src="/static/icons/clipboard.svg" style="vertical-align: baseline" alt="" width="16" height="16" title="Copy"></button>
+                        <button class="username copyToClipboard btn btn-outline-secondary" type="button"><img src="/static/icons/clipboard.svg" style="vertical-align: baseline" alt="" width="16" height="16" title="Copy"></button>
                     </div>
-                    <input type="text" class="form-control" placeholder="Enter username" name="username" id="username" value="{{.host.UserName}}">
+                    <input type="text" class="username form-control" placeholder="Enter username" name="username" id="username" value="{{.host.UserName}}">
                     <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="button" onclick="generateUsername()">Generate</button>
+                        <button class="username generateHash btn btn-outline-secondary" type="button">Generate</button>
                     </div>
                 </div>
                 <div class="col-1"></div>
@@ -51,17 +51,17 @@
                 <div class="col-2 text-right">Password:</div>
                 <div class="col-8 input-group">
                     <div class="input-group-prepend">
-                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('password')"><img src="/static/icons/clipboard.svg" style="vertical-align: baseline" alt="" width="16" height="16" title="Copy"></button>
+                        <button class="password copyToClipboard btn btn-outline-secondary" type="button"><img src="/static/icons/clipboard.svg" style="vertical-align: baseline" alt="" width="16" height="16" title="Copy"></button>
                     </div>
-                    <input type="text" class="form-control" placeholder="Enter password" name="password" id="password" value="{{.host.Password}}">
+                    <input type="text" class="password form-control" placeholder="Enter password" name="password" id="password" value="{{.host.Password}}">
                     <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" type="button" onclick="generatePassword()">Generate</button>
+                        <button class="password generateHash btn btn-outline-secondary" type="button">Generate</button>
                     </div>
                 </div>
                 <div class="col-1"></div>
             </div>
             <div class="row mt-3">
-                <div class="col-11 d-flex justify-content-end"><button class="btn btn-primary" onclick="addEditHost({{.host.ID}}, {{.addEdit}})">{{if eq .addEdit "edit" }}Edit{{else if eq .addEdit "add" }}Add{{end}} Host Entry</button></div>
+                <div class="col-11 d-flex justify-content-end"><button id="{{.host.ID}}" class="{{.addEdit}} btn btn-primary">{{if eq .addEdit "edit" }}Edit{{else if eq .addEdit "add" }}Add{{end}} Host Entry</button></div>
                 <div class="col-1"></div>
             </div>
         </form>

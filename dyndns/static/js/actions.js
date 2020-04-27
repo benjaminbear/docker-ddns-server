@@ -1,28 +1,48 @@
-function deleteHost(id) {
+$("button.addHost").click(function () {
+    location.href='/hosts/add';
+});
+
+$("button.editHost").click(function () {
+    location.href='/hosts/edit/' + $(this).attr('id');
+});
+
+$("button.deleteHost").click(function () {
     $.ajax({
         contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
         type: 'GET',
-        url: "/hosts/delete/" + id
+        url: "/hosts/delete/" + $(this).attr('id')
     }).done(function(data, textStatus, jqXHR) {
         location.href="/hosts";
     }).fail(function(jqXHR, textStatus, errorThrown) {
         alert("Error: " + $.parseJSON(jqXHR.responseText).message);
         location.reload()
     });
-}
+});
 
-function addEditHost(id, addedit) {
-    if (id == null) {
-        id = ""
-    } else {
+$("button.showHostLog").click(function () {
+    location.href='/logs/host/' + $(this).attr('id');
+});
+
+$("button.add, button.edit").click(function () {
+    let id = $(this).attr('id');
+    if (id !== "") {
         id = "/"+id
+    }
+
+    let action;
+    if ($(this).hasClass("add")) {
+        action = "add";
+    }
+
+    if ($(this).hasClass("edit")) {
+        action = "edit";
     }
 
     $.ajax({
         contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-        data: $('#edithostform').serialize(),
+        data: $('#editHostForm').serialize(),
         type: 'POST',
-        url: '/hosts/'+addedit+id,
+        url: '/hosts/'+action+id,
     }).done(function(data, textStatus, jqXHR) {
         location.href="/hosts";
     }).fail(function(jqXHR, textStatus, errorThrown) {
@@ -30,7 +50,7 @@ function addEditHost(id, addedit) {
     });
 
     return false;
-}
+});
 
 function logOut(){
         try {
@@ -58,26 +78,37 @@ function logOut(){
 }
 
 function randomHash() {
-    var chars = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-+<>ABCDEFGHIJKLMNOP1234567890";
-    var pass = "";
-    for (var x = 0; x < 32; x++) {
-        var i = Math.floor(Math.random() * chars.length);
+    let chars = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-+<>ABCDEFGHIJKLMNOP1234567890";
+    let pass = "";
+    for (let x = 0; x < 32; x++) {
+        let i = Math.floor(Math.random() * chars.length);
         pass += chars.charAt(i);
     }
     return pass;
 }
 
-function generateUsername() {
-    edithostform.username.value = randomHash();
-}
+$("button.copyToClipboard").click(function () {
+    let id;
+    if ($(this).hasClass('username')) {
+        id = "username";
+    } else if ($(this).hasClass('password')) {
+        id = "password";
+    }
 
-function generatePassword() {
-    edithostform.password.value = randomHash();
-}
-
-function copyToClipboard(inputId) {
-    var copyText = document.getElementById(inputId);
+    let copyText = document.getElementById(id);
     copyText.select();
     copyText.setSelectionRange(0, 99999);
     document.execCommand("copy");
-}
+});
+
+$("button.generateHash").click(function () {
+    let id;
+    if ($(this).hasClass('username')) {
+        id = "username";
+    } else if ($(this).hasClass('password')) {
+        id = "password";
+    }
+
+    let input = document.getElementById(id);
+    input.value = randomHash();
+});
