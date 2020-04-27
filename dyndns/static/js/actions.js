@@ -38,6 +38,8 @@ $("button.add, button.edit").click(function () {
         action = "edit";
     }
 
+    $('#domain').prop('disabled', false);
+
     $.ajax({
         contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
         data: $('#editHostForm').serialize(),

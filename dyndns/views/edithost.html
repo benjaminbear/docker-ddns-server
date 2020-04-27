@@ -8,7 +8,14 @@
                 <div class="col-8 input-group">
                     <input type="text" class="form-control" placeholder="Enter hostname" name="hostname" value="{{.host.Hostname}}" {{if eq .addEdit "edit" }}readonly{{end}}>
                     <div class="input-group-append">
-                        <span class="input-group-text" id="basic-addon2">.{{.config.Domain}}</span>
+                        <select class="custom-select" name="domain" id="domain">
+                        {{if eq .addEdit "add"}}
+                            <option selected>Choose...</option>
+                        {{end}}
+                        {{range $domain := .config.Domains}}
+                            <a class="dropdown-item"><option {{if eq $.addEdit "edit"}}disabled="true" {{if eq $.host.Domain $domain}}selected{{end}}{{end}} value="{{$domain}}">{{$domain}}</option></a>
+                        {{end}}
+                        </select>
                     </div>
                 </div>
                 <div class="col-1"></div>

@@ -20,7 +20,7 @@ type Handler struct {
 
 type Envs struct {
 	AdminLogin string
-	Domain     string
+	Domains    []string
 }
 
 type CustomValidator struct {
@@ -83,9 +83,9 @@ func (h *Handler) ParseEnvs() error {
 		return fmt.Errorf("environment variable DDNS_ADMIN_LOGIN has to be set")
 	}
 
-	h.Config.Domain = os.Getenv("DDNS_DOMAIN")
-	if h.Config.Domain == "" {
-		return fmt.Errorf("environment variable DDNS_DOMAIN has to be set")
+	h.Config.Domains = strings.Split(os.Getenv("DDNS_DOMAINS"), ",")
+	if len(h.Config.Domains) < 1 {
+		return fmt.Errorf("environment variable DDNS_DOMAINS has to be set")
 	}
 
 	return nil
