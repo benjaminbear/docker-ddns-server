@@ -41,8 +41,7 @@ func (h *Handler) ListHosts(c echo.Context) (err error) {
 	}
 
 	return c.Render(http.StatusOK, "listhosts", echo.Map{
-		"hosts":  hosts,
-		"config": h.Config,
+		"hosts": hosts,
 	})
 }
 
@@ -104,7 +103,7 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = h.updateRecord(host.Hostname, host.Ip, ipType, host.Ttl); err != nil {
+		if err = h.updateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -148,7 +147,7 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = h.updateRecord(host.Hostname, host.Ip, ipType, host.Ttl); err != nil {
+		if err = h.updateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -186,7 +185,7 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = h.deleteRecord(host.Hostname); err != nil {
+	if err = h.deleteRecord(host.Hostname, host.Domain); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
@@ -216,7 +215,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 
 	// Validate hostname
 	hostname := c.QueryParam("hostname")
-	if hostname == "" || hostname != h.AuthHost.Hostname+"."+h.Config.Domain {
+	if hostname == "" || hostname != h.AuthHost.Hostname+"."+h.AuthHost.Domain {
 		if err = h.CreateLogEntry(log); err != nil {
 			fmt.Println(err)
 		}
@@ -239,7 +238,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	}
 
 	// add/update DNS record
-	if err = h.updateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Ttl); err != nil {
+	if err = h.updateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl); err != nil {
 		if err = h.CreateLogEntry(log); err != nil {
 			fmt.Println(err)
 		}

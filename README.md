@@ -32,7 +32,7 @@ docker run -it -d \
     -v /somefolder:/var/cache/bind \
     -v /someotherfolder:/root/dyndns/database \
     -e DDNS_ADMIN_LOGIN=admin:123455546. \
-    -e DDNS_DOMAIN=dyndns.example.com \
+    -e DDNS_DOMAINS=dyndns.example.com \
     -e DDNS_PARENT_NS=ns.example.com \
     -e DDNS_DEFAULT_TTL=3600 \
     --name=dyndns \
@@ -54,7 +54,7 @@ If you want to embed this into a docker-compose.yml you have to double the dolla
 echo $(htpasswd -nb user password) | sed -e s/\\$/\\$\\$/g
 ```
 
-`DDNS_DOMAIN` is the domain of the webservice and the domain zone of your dyndns server (see DNS Setup) i.e. `dyndns.example.com`
+`DDNS_DOMAINS` are the domains of the webservice and the domain zones of your dyndns server (see DNS Setup) i.e. `dyndns.example.com,dyndns.example.org` (comma separated list)
 
 `DDNS_PARENT_NS` is the parent name server of your domain i.e. `ns.example.com`
 

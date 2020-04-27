@@ -8,7 +8,8 @@ import (
 
 type Host struct {
 	gorm.Model
-	Hostname   string    `gorm:"unique;not null" form:"hostname" validate:"required,hostname"`
+	Hostname   string    `gorm:"unique_index:idx_host_domain;not null" form:"hostname" validate:"required,hostname"`
+	Domain     string    `gorm:"unique_index:idx_host_domain;not null" validate:"required,hostname"`
 	Ip         string    `form:"ip" validate:"omitempty,ipv4"`
 	Ttl        int       `form:"ttl" validate:"required,min=20,max=86400"`
 	LastUpdate time.Time `form:"lastupdate"`

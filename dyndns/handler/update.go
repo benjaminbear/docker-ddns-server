@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-func (h *Handler) updateRecord(hostname string, ipAddr string, addrType string, ttl int) error {
+func (h *Handler) updateRecord(hostname string, ipAddr string, addrType string, zone string, ttl int) error {
 	fmt.Printf("%s record update request: %s -> %s\n", addrType, hostname, ipAddr)
 
 	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
@@ -26,9 +26,9 @@ func (h *Handler) updateRecord(hostname string, ipAddr string, addrType string, 
 	w := bufio.NewWriter(f)
 
 	w.WriteString(fmt.Sprintf("server %s\n", "localhost"))
-	w.WriteString(fmt.Sprintf("zone %s\n", h.Config.Domain))
-	w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", hostname, h.Config.Domain, addrType))
-	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", hostname, h.Config.Domain, ttl, addrType, ipAddr))
+	w.WriteString(fmt.Sprintf("zone %s\n", zone))
+	w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", hostname, zone, addrType))
+	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", hostname, zone, ttl, addrType, ipAddr))
 	w.WriteString("send\n")
 
 	w.Flush()
@@ -51,7 +51,7 @@ func (h *Handler) updateRecord(hostname string, ipAddr string, addrType string, 
 	return nil
 }
 
-func (h *Handler) deleteRecord(hostname string) error {
+func (h *Handler) deleteRecord(hostname string, zone string) error {
 	fmt.Printf("record delete request: %s\n", hostname)
 
 	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
@@ -63,8 +63,8 @@ func (h *Handler) deleteRecord(hostname string) error {
 	w := bufio.NewWriter(f)
 
 	w.WriteString(fmt.Sprintf("server %s\n", "localhost"))
-	w.WriteString(fmt.Sprintf("zone %s\n", h.Config.Domain))
-	w.WriteString(fmt.Sprintf("update delete %s.%s\n", hostname, h.Config.Domain))
+	w.WriteString(fmt.Sprintf("zone %s\n", zone))
+	w.WriteString(fmt.Sprintf("update delete %s.%s\n", hostname, zone))
 	w.WriteString("send\n")
 
 	w.Flush()
