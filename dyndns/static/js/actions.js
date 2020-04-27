@@ -54,7 +54,7 @@ $("button.add, button.edit").click(function () {
     return false;
 });
 
-function logOut(){
+$("#logout").click(function (){
         try {
             // This is for Firefox
             $.ajax({
@@ -77,17 +77,7 @@ function logOut(){
                 document.location = "http://reset:reset@" + document.location.hostname + document.location.pathname;
             }
         }
-}
-
-function randomHash() {
-    let chars = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-+<>ABCDEFGHIJKLMNOP1234567890";
-    let pass = "";
-    for (let x = 0; x < 32; x++) {
-        let i = Math.floor(Math.random() * chars.length);
-        pass += chars.charAt(i);
-    }
-    return pass;
-}
+});
 
 $("button.copyToClipboard").click(function () {
     let id;
@@ -102,6 +92,16 @@ $("button.copyToClipboard").click(function () {
     copyText.setSelectionRange(0, 99999);
     document.execCommand("copy");
 });
+
+function randomHash() {
+    let chars = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-+<>ABCDEFGHIJKLMNOP1234567890";
+    let pass = "";
+    for (let x = 0; x < 32; x++) {
+        let i = Math.floor(Math.random() * chars.length);
+        pass += chars.charAt(i);
+    }
+    return pass;
+}
 
 $("button.generateHash").click(function () {
     let id;
