@@ -114,3 +114,12 @@ $("button.generateHash").click(function () {
     let input = document.getElementById(id);
     input.value = randomHash();
 });
+
+$(document).ready(function(){
+    $(".errorTooltip").tooltip({
+        track: true,
+        content: function () {
+            return $(this).prop('title');
+        }
+    });
+});
