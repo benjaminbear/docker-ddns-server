@@ -205,6 +205,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	if log.CallerIP == "" {
 		log.CallerIP, _, err = net.SplitHostPort(c.Request().RemoteAddr)
 		if err != nil {
+			log.Message = "Bad Request: Unable to get caller IP"
 			if err = h.CreateLogEntry(log); err != nil {
 				fmt.Println(err)
 			}
@@ -216,6 +217,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	// Validate hostname
 	hostname := c.QueryParam("hostname")
 	if hostname == "" || hostname != h.AuthHost.Hostname+"."+h.AuthHost.Domain {
+		log.Message = "Hostname or combination of authenticated user and hostname is invalid"
 		if err = h.CreateLogEntry(log); err != nil {
 			fmt.Println(err)
 		}
@@ -229,6 +231,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		log.SentIP = log.CallerIP
 		ipType = getIPType(log.SentIP)
 		if ipType == "" {
+			log.Message = "Bad Request: Sent IP is invalid"
 			if err = h.CreateLogEntry(log); err != nil {
 				fmt.Println(err)
 			}
@@ -239,6 +242,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 
 	// add/update DNS record
 	if err = h.updateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl); err != nil {
+		log.Message = fmt.Sprintf("DNS error: %v", err)
 		if err = h.CreateLogEntry(log); err != nil {
 			fmt.Println(err)
 		}
@@ -249,6 +253,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	log.Host.Ip = log.SentIP
 	log.Host.LastUpdate = log.TimeStamp
 	log.Status = true
+	log.Message = "No errors occurred"
 	if err = h.CreateLogEntry(log); err != nil {
 		fmt.Println(err)
 	}

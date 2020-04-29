@@ -9,6 +9,7 @@ import (
 type Log struct {
 	gorm.Model
 	Status    bool
+	Message   string
 	Host      Host
 	HostID    uint
 	SentIP    string

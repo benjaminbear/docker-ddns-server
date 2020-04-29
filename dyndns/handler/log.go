@@ -26,8 +26,7 @@ func (h *Handler) ShowLogs(c echo.Context) (err error) {
 	}
 
 	return c.Render(http.StatusOK, "listlogs", echo.Map{
-		"logs":   logs,
-		"config": h.Config,
+		"logs": logs,
 	})
 }
 
