@@ -93,3 +93,7 @@ or
 http://username:password@dyndns.example.com:8080/update?hostname=blog.dyndns.example.com
 ```
 
+The handler will also listen on:
+* /nic/update
+* /v2/update
+* /v3/update
