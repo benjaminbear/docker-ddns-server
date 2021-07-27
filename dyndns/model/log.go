@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// Log defines a log entry.
 type Log struct {
 	gorm.Model
 	Status    bool

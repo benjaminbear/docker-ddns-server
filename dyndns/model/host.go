@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// Host is a dns host entry.
 type Host struct {
 	gorm.Model
 	Hostname   string    `gorm:"unique_index:idx_host_domain;not null" form:"hostname" validate:"required,hostname"`
@@ -17,6 +18,8 @@ type Host struct {
 	Password   string    `form:"password" validate:"min=8"`
 }
 
+// UpdateHost updates all fields of a host entry
+// and sets a new LastUpdate date.
 func (h *Host) UpdateHost(updateHost *Host) (updateRecord bool) {
 	updateRecord = false
 	if h.Ip != updateHost.Ip || h.Ttl != updateHost.Ttl {

@@ -2,13 +2,14 @@ package handler
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
 	"github.com/go-playground/validator/v10"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/tg123/go-htpasswd"
-	"os"
-	"strings"
 )
 
 type Handler struct {
@@ -27,6 +28,7 @@ type CustomValidator struct {
 	Validator *validator.Validate
 }
 
+// Validate implements the Validator.
 func (cv *CustomValidator) Validate(i interface{}) error {
 	return cv.Validator.Struct(i)
 }
@@ -35,6 +37,8 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Authenticate is the method the website admin user and the host update user have to authenticate against.
+// To gather admin rights the username password combination must match with the credentials given by the env var.
 func (h *Handler) Authenticate(username, password string, c echo.Context) (bool, error) {
 	h.AuthHost = nil
 	h.AuthAdmin = false
@@ -76,6 +80,9 @@ func (h *Handler) authByEnv(username, password string) (bool, error) {
 	return false, nil
 }
 
+// ParseEnvs parses all needed environment variables:
+// DDNS_ADMIN_LOGIN: The basic auth login string in htpasswd style.
+// DDNS_DOMAINS: All domains that will be handled by the dyndns server.
 func (h *Handler) ParseEnvs() error {
 	h.Config = Envs{}
 	h.Config.AdminLogin = os.Getenv("DDNS_ADMIN_LOGIN")
@@ -91,6 +98,7 @@ func (h *Handler) ParseEnvs() error {
 	return nil
 }
 
+// InitDB creates an empty database and creates all tables if there isn't already one, or opens the existing one.
 func (h *Handler) InitDB() (err error) {
 	if _, err := os.Stat("database"); os.IsNotExist(err) {
 		err = os.MkdirAll("database", os.ModePerm)

@@ -2,18 +2,26 @@ package handler
 
 import (
 	"fmt"
-	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
-	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/nswrapper"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
+	"github.com/jinzhu/gorm"
+	"github.com/labstack/echo/v4"
 )
 
+const (
+	UNAUTHORIZED = "You are not allowed to view that content"
+)
+
+// GetHost fetches a host from the database by "id".
 func (h *Handler) GetHost(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -30,9 +38,10 @@ func (h *Handler) GetHost(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, id)
 }
 
+// ListHosts fetches all hosts from database and lists them on the website.
 func (h *Handler) ListHosts(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	hosts := new([]model.Host)
@@ -45,9 +54,10 @@ func (h *Handler) ListHosts(c echo.Context) (err error) {
 	})
 }
 
+// AddHost just renders the "add host" website.
 func (h *Handler) AddHost(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	return c.Render(http.StatusOK, "edithost", echo.Map{
@@ -56,9 +66,10 @@ func (h *Handler) AddHost(c echo.Context) (err error) {
 	})
 }
 
+// EditHost fetches a host by "id" and renders the "edit host" website.
 func (h *Handler) EditHost(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -78,9 +89,12 @@ func (h *Handler) EditHost(c echo.Context) (err error) {
 	})
 }
 
+// CreateHost validates the host data from the "add host" website,
+// adds the host entry to the database,
+// and adds the entry to the DNS server.
 func (h *Handler) CreateHost(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	host := &model.Host{}
@@ -98,12 +112,12 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 
 	// If a ip is set create dns entry
 	if host.Ip != "" {
-		ipType := getIPType(host.Ip)
+		ipType := nswrapper.GetIPType(host.Ip)
 		if ipType == "" {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = h.updateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
+		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -111,9 +125,12 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, host)
 }
 
+// UpdateHost validates the host data from the "edit host" website,
+// and compares the host data with the entry in the database by "id".
+// If anything has changed the database and DNS entries for the host will be updated.
 func (h *Handler) UpdateHost(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	hostUpdate := &model.Host{}
@@ -142,12 +159,12 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 
 	// If ip or ttl changed update dns entry
 	if forceRecordUpdate {
-		ipType := getIPType(host.Ip)
+		ipType := nswrapper.GetIPType(host.Ip)
 		if ipType == "" {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = h.updateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
+		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -155,9 +172,11 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 	return c.JSON(http.StatusOK, host)
 }
 
+// DeleteHost fetches a host entry from the database by "id"
+// and deletes the database and DNS server entry to it.
 func (h *Handler) DeleteHost(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
@@ -185,23 +204,26 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = h.deleteRecord(host.Hostname, host.Domain); err != nil {
+	if err = nswrapper.DeleteRecord(host.Hostname, host.Domain); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
 	return c.JSON(http.StatusOK, id)
 }
 
+// UpdateIP implements the update method called by the routers.
+// Hostname, IP and senders IP are validated, a log entry is created
+// and finally if everything is ok, the DNS Server will be updated
 func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	if h.AuthHost == nil {
 		return c.String(http.StatusBadRequest, "badauth\n")
 	}
 
-	log := &model.Log{Status: false, Host: *h.AuthHost, TimeStamp: time.Now(), UserAgent: shrinkUserAgent(c.Request().UserAgent())}
+	log := &model.Log{Status: false, Host: *h.AuthHost, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
 	log.SentIP = c.QueryParam(("myip"))
 
 	// Get caller IP
-	log.CallerIP, err = getCallerIP(c.Request())
+	log.CallerIP, err = nswrapper.GetCallerIP(c.Request())
 	if log.CallerIP == "" {
 		log.CallerIP, _, err = net.SplitHostPort(c.Request().RemoteAddr)
 		if err != nil {
@@ -226,10 +248,10 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	}
 
 	// Get IP type
-	ipType := getIPType(log.SentIP)
+	ipType := nswrapper.GetIPType(log.SentIP)
 	if ipType == "" {
 		log.SentIP = log.CallerIP
-		ipType = getIPType(log.SentIP)
+		ipType = nswrapper.GetIPType(log.SentIP)
 		if ipType == "" {
 			log.Message = "Bad Request: Sent IP is invalid"
 			if err = h.CreateLogEntry(log); err != nil {
@@ -241,7 +263,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	}
 
 	// add/update DNS record
-	if err = h.updateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl); err != nil {
+	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl); err != nil {
 		log.Message = fmt.Sprintf("DNS error: %v", err)
 		if err = h.CreateLogEntry(log); err != nil {
 			fmt.Println(err)

@@ -1,12 +1,14 @@
 package handler
 
 import (
-	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
+	"github.com/labstack/echo/v4"
 )
 
+// CreateLogEntry simply adds a log entry to the database.
 func (h *Handler) CreateLogEntry(log *model.Log) (err error) {
 	if err = h.DB.Create(log).Error; err != nil {
 		return err
@@ -15,9 +17,10 @@ func (h *Handler) CreateLogEntry(log *model.Log) (err error) {
 	return nil
 }
 
+// ShowLogs fetches all log entries from all hosts and renders them to the website.
 func (h *Handler) ShowLogs(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	logs := new([]model.Log)
@@ -30,9 +33,10 @@ func (h *Handler) ShowLogs(c echo.Context) (err error) {
 	})
 }
 
+// ShowHostLogs fetches all log entries of a specific host by "id" and renders them to the website.
 func (h *Handler) ShowHostLogs(c echo.Context) (err error) {
 	if !h.AuthAdmin {
-		return c.JSON(http.StatusUnauthorized, &Error{"You are not allow to view that content"})
+		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
