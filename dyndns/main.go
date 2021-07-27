@@ -47,7 +47,7 @@ func main() {
 	// UI Routes
 	e.GET("/", func(c echo.Context) error {
 		//render with master
-		return c.Render(http.StatusOK, "index", nil)
+		return c.Render(http.StatusOK, "listhosts", nil)
 	})
 
 	e.GET("/hosts/add", h.AddHost)
