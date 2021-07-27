@@ -60,7 +60,12 @@ func main() {
 	e.POST("/hosts/add", h.CreateHost)
 	e.POST("/hosts/edit/:id", h.UpdateHost)
 	e.GET("/hosts/delete/:id", h.DeleteHost)
+
+	// dyndns compatible api
 	e.GET("/update", h.UpdateIP)
+	e.GET("/nic/update", h.UpdateIP)
+	e.GET("/v2/update", h.UpdateIP)
+	e.GET("/v3/update", h.UpdateIP)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
