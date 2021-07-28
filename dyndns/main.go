@@ -6,7 +6,6 @@ import (
 	"github.com/benjaminbear/docker-ddns-server/dyndns/handler"
 	"github.com/foolin/goview/supports/echoview-v4"
 	"github.com/go-playground/validator/v10"
-
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -53,6 +52,8 @@ func main() {
 	e.GET("/hosts/add", h.AddHost)
 	e.GET("/hosts/edit/:id", h.EditHost)
 	e.GET("/hosts", h.ListHosts)
+	e.GET("/cnames/add", h.AddCName)
+	e.GET("/cnames", h.ListCNames)
 	e.GET("/logs", h.ShowLogs)
 	e.GET("/logs/host/:id", h.ShowHostLogs)
 
@@ -60,6 +61,8 @@ func main() {
 	e.POST("/hosts/add", h.CreateHost)
 	e.POST("/hosts/edit/:id", h.UpdateHost)
 	e.GET("/hosts/delete/:id", h.DeleteHost)
+	e.POST("/cnames/add", h.CreateCName)
+	e.GET("/cnames/delete/:id", h.DeleteCName)
 
 	// dyndns compatible api
 	e.GET("/update", h.UpdateIP)

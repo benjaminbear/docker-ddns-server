@@ -106,6 +106,10 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
+	if err = h.checkUniqueHostname(host.Hostname, host.Domain); err != nil {
+		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
+	}
+
 	if err = h.DB.Create(host).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -198,6 +202,10 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 
+		if err = tx.Where(&model.CName{TargetID: uint(id)}).Delete(&model.CName{}).Error; err != nil {
+			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -281,4 +289,29 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	}
 
 	return c.String(http.StatusOK, "good\n")
+}
+
+func (h *Handler) checkUniqueHostname(hostname, domain string) error {
+	fmt.Println(hostname, domain)
+	hosts := new([]model.Host)
+	if err := h.DB.Where(&model.Host{Hostname: hostname, Domain: domain}).Find(hosts).Error; err != nil {
+		return err
+	}
+
+	if len(*hosts) > 0 {
+		return fmt.Errorf("hostname already exists")
+	}
+
+	cnames := new([]model.CName)
+	if err := h.DB.Preload("Target").Where(&model.CName{Hostname: hostname}).Find(cnames).Error; err != nil {
+		return err
+	}
+
+	for _, cname := range *cnames {
+		if cname.Target.Domain == domain {
+			return fmt.Errorf("hostname already exists")
+		}
+	}
+
+	return nil
 }

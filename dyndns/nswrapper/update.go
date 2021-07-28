@@ -10,8 +10,8 @@ import (
 )
 
 // UpdateRecord builds a nsupdate file and updates a record by executing it with nsupdate.
-func UpdateRecord(hostname string, ipAddr string, addrType string, zone string, ttl int) error {
-	fmt.Printf("%s record update request: %s -> %s\n", addrType, hostname, ipAddr)
+func UpdateRecord(hostname string, target string, addrType string, zone string, ttl int) error {
+	fmt.Printf("%s record update request: %s -> %s\n", addrType, hostname, target)
 
 	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
 	if err != nil {
@@ -24,7 +24,7 @@ func UpdateRecord(hostname string, ipAddr string, addrType string, zone string, 
 	w.WriteString(fmt.Sprintf("server %s\n", "localhost"))
 	w.WriteString(fmt.Sprintf("zone %s\n", zone))
 	w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", hostname, zone, addrType))
-	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", hostname, zone, ttl, addrType, ipAddr))
+	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", hostname, zone, ttl, addrType, target))
 	w.WriteString("send\n")
 
 	w.Flush()
