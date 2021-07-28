@@ -116,6 +116,10 @@ func (h *Handler) InitDB() (err error) {
 		h.DB.CreateTable(&model.Host{})
 	}
 
+	if !h.DB.HasTable(&model.CName{}) {
+		h.DB.CreateTable(&model.CName{})
+	}
+
 	if !h.DB.HasTable(&model.Log{}) {
 		h.DB.CreateTable(&model.Log{})
 	}

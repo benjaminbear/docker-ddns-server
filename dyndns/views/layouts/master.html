@@ -27,13 +27,16 @@
         <nav>
             <ul class="nav nav-pills float-right">
                 <li class="nav-item">
-                    <a class="nav-link active" href="/hosts">Hosts <span class="sr-only">(current)</span></a>
+                    <a class="nav-link nav-hosts" href="/hosts">Hosts</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/logs">Logs</a>
+                    <a class="nav-link nav-cnames" href="/cnames">CNames</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="" id="logout">Logout</a>
+                    <a class="nav-link nav-logs" href="/logs">Logs</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-logout" href="" id="logout">Logout</a>
                 </li>
             </ul>
         </nav>
@@ -44,7 +47,7 @@
     {{template "content" .}}
 
     <footer class="footer">
-        <p>&copy; TheBBCloud 2020</p>
+        <p>&copy; TheBBCloud 2021</p>
     </footer>
 
 </div> <!-- /container -->
@@ -57,6 +60,6 @@
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
-<script src="/static/js/actions.js"></script>
+<script src="/static/js/actions-1.0.0.js"></script>
 </body>
 </html>

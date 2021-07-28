@@ -1,0 +1,25 @@
+{{define "content"}}
+<div class="container marketing">
+    <h3 class="text-center mb-4">DNS CName Entries</h3>
+    <table class="table table-striped text-center">
+        <thead>
+        <tr>
+            <th>Hostname</th>
+            <th>Target</th>
+            <th>TTL</th>
+            <th><button class="addCName btn btn-primary">Add CName Entry</button></th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .cnames}}
+        <tr>
+            <td>{{.Hostname}}.{{.Target.Domain}}</td>
+            <td>{{.Target.Hostname}}.{{.Target.Domain}}</td>
+            <td>{{.Ttl}}</td>
+            <td><button id="{{.ID}}" class="deleteCName btn btn-outline-secondary btn-sm"><img src="/static/icons/trash.svg" alt="" width="16" height="16" title="Delete"></button></td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

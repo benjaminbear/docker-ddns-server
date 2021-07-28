@@ -1,0 +1,48 @@
+{{define "content"}}
+    <div class="p-4" style="background-color: #e9ecef">
+        <h3 class="text-center mb-4">Add CName Entry</h3>
+            <form id="editHostForm" action="javascript:void(0);">
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">Hostname:</div>
+                <div class="col-8 input-group">
+                    <input type="text" class="form-control" placeholder="Enter hostname" name="hostname">
+                    <div class="input-group-append">
+                        <input type="text" class="form-control" placeholder="Select target.." id="domain_mirror" readonly>
+                    </div>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">Target:</div>
+                <div class="col-8">
+                    <select class="custom-select" name="target_id" id="target_id" onchange="newTargetSelected()">
+                        <option selected>Choose...</option>
+                        {{range $host := .hosts}}
+                        <a class="dropdown-item"><option label="{{$host.Hostname}}.{{$host.Domain}}" value="{{$host.ID}}">{{$host.Hostname}}</option></a>
+                        {{end}}
+                    </select>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-1"></div>
+                <div class="col-2 text-right">TTL:</div>
+                <div class="col-8">
+                    <select class="form-control" name="ttl">
+                        <option value="20" {{if .cname.Ttl }}{{if eq .cname.Ttl 20 }}selected{{end}}{{end}}>20 s.  Super dynamic DNS for frequent updates</option>
+                        <option value="60" {{if .cname.Ttl }}{{if eq .cname.Ttl 60 }}selected{{end}}{{end}}>60 s.  Default dynamic DNS value</option>
+                        <option value="3600" {{if .cname.Ttl }}{{if eq .cname.Ttl 3600 }}selected{{end}}{{end}}>1 hr.  Rarely updated IP address</option>
+                        <option value="14400" {{if .cname.Ttl }}{{if eq .cname.Ttl 14400 }}selected{{end}}{{end}}>4 hrs. Static record with benefits of DNS caching</option>
+                    </select>
+                </div>
+                <div class="col-1"></div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-11 d-flex justify-content-end"><button id="{{.cname.ID}}" class="add cname btn btn-primary">Add CName Entry</button></div>
+                <div class="col-1"></div>
+            </div>
+        </form>
+    </div>
+{{end}}
