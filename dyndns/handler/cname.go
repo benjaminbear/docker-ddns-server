@@ -97,7 +97,7 @@ func (h *Handler) DeleteCName(c echo.Context) (err error) {
 	}
 
 	cname := &model.CName{}
-	if err = h.DB.First(cname, id).Error; err != nil {
+	if err = h.DB.Preload("Target").First(cname, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
