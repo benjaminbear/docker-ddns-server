@@ -292,7 +292,6 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 }
 
 func (h *Handler) checkUniqueHostname(hostname, domain string) error {
-	fmt.Println(hostname, domain)
 	hosts := new([]model.Host)
 	if err := h.DB.Where(&model.Host{Hostname: hostname, Domain: domain}).Find(hosts).Error; err != nil {
 		return err
