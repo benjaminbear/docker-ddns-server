@@ -30,7 +30,7 @@ docker run -it -d \
     -p 53:53 \
     -p 53:53/udp \
     -v /somefolder:/var/cache/bind \
-    -v /someotherfolder:/root/dyndns/database \
+    -v /someotherfolder:/root/database \
     -e DDNS_ADMIN_LOGIN=admin:123455546. \
     -e DDNS_DOMAINS=dyndns.example.com \
     -e DDNS_PARENT_NS=ns.example.com \
