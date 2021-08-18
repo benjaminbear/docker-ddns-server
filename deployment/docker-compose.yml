@@ -14,4 +14,4 @@ services:
       - "8080:8080"
     volumes:
        - ./bind-data:/var/cache/bind
-       - ./database:/root/dyndns/database
+       - ./database:/root/database
