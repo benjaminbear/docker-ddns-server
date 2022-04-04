@@ -1,0 +1,54 @@
+---
+name: 'build images'
+
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
+          VERSION=${GITHUB_REF/refs\/tags\//}
+          SHORTREF=${GITHUB_SHA::8}
+          TAGS="${DOCKER_IMAGE}:${VERSION},${DOCKER_IMAGE}:latest"
+      
+          # Set output parameters
+          echo ::set-output name=version::${VERSION}
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=docker_image::${DOCKER_IMAGE}
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=version::${GITHUB_REF/refs\/tags\//}     
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          context: .
+          file: ./deployment/Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm
+          push: true
+          tags: ${{ steps.prep.outputs.tags }}
