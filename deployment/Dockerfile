@@ -4,7 +4,7 @@ ENV GO111MODULE=on
 ENV GOPATH=/root/go
 RUN mkdir -p /root/go/src
 COPY dyndns /root/go/src/dyndns
-RUN cd /root/go/src/dyndns
+WORKDIR /root/go/src/dyndns
 RUN go mod download
 RUN go mod verify
 RUN GOOS=linux go build -o /root/go/bin/dyndns && go test -v
