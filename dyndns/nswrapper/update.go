@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/labstack/gommon/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 
 // UpdateRecord builds a nsupdate file and updates a record by executing it with nsupdate.
 func UpdateRecord(hostname string, target string, addrType string, zone string, ttl int) error {
-	fmt.Printf("%s record update request: %s -> %s\n", addrType, hostname, target)
+	log.Info(fmt.Sprintf("%s record update request: %s -> %s", addrType, hostname, target))
 
 	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
 	if err != nil {

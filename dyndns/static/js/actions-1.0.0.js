@@ -1,18 +1,18 @@
 $("button.addHost").click(function () {
-    location.href='/hosts/add';
+    location.href='/admin/hosts/add';
 });
 
 $("button.editHost").click(function () {
-    location.href='/hosts/edit/' + $(this).attr('id');
+    location.href='/admin/hosts/edit/' + $(this).attr('id');
 });
 
 $("button.deleteHost").click(function () {
     $.ajax({
         contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
         type: 'GET',
-        url: "/hosts/delete/" + $(this).attr('id')
+        url: "/admin/hosts/delete/" + $(this).attr('id')
     }).done(function(data, textStatus, jqXHR) {
-        location.href="/hosts";
+        location.href="/admin/hosts";
     }).fail(function(jqXHR, textStatus, errorThrown) {
         alert("Error: " + $.parseJSON(jqXHR.responseText).message);
         location.reload()
@@ -20,7 +20,7 @@ $("button.deleteHost").click(function () {
 });
 
 $("button.showHostLog").click(function () {
-    location.href='/logs/host/' + $(this).attr('id');
+    location.href='/admin/logs/host/' + $(this).attr('id');
 });
 
 $("button.add, button.edit").click(function () {
@@ -53,9 +53,9 @@ $("button.add, button.edit").click(function () {
         contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
         data: $('#editHostForm').serialize(),
         type: 'POST',
-        url: '/'+type+'/'+action+id,
+        url: '/admin/'+type+'/'+action+id,
     }).done(function(data, textStatus, jqXHR) {
-        location.href="/"+type;
+        location.href="/admin/"+type;
     }).fail(function(jqXHR, textStatus, errorThrown) {
         alert("Error: " + $.parseJSON(jqXHR.responseText).message);
     });
@@ -89,16 +89,16 @@ $("#logout").click(function (){
 });
 
 $("button.addCName").click(function () {
-    location.href='/cnames/add';
+    location.href='/admin/cnames/add';
 });
 
 $("button.deleteCName").click(function () {
     $.ajax({
         contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
         type: 'GET',
-        url: "/cnames/delete/" + $(this).attr('id')
+        url: "/admin/cnames/delete/" + $(this).attr('id')
     }).done(function(data, textStatus, jqXHR) {
-        location.href="/cnames";
+        location.href="/admin/cnames";
     }).fail(function(jqXHR, textStatus, errorThrown) {
         alert("Error: " + $.parseJSON(jqXHR.responseText).message);
         location.reload()
@@ -123,6 +123,16 @@ $("button.copyToClipboard").click(function () {
     copyText.select();
     copyText.setSelectionRange(0, 99999);
     document.execCommand("copy");
+});
+$("button.copyUrlToClipboard").click(function () {
+    let id = $(this).attr('id');
+    let hostname = document.getElementById('host-hostname_'+id).innerHTML
+    let domain = document.getElementById('host-domain_'+id).innerHTML
+    let username = document.getElementById('host-username_'+id).innerHTML
+    let password = document.getElementById('host-password_'+id).innerHTML
+    let out = location.protocol + '//' +username.trim()+':'+password.trim()+'@'+ domain
+    out +='/update?hostname='+hostname
+    navigator.clipboard.writeText(out.trim());
 });
 
 function randomHash() {
@@ -155,7 +165,7 @@ $(document).ready(function(){
         }
     });
 
-    urlPath = new URL(window.location.href).pathname.split("/")[1];
+    urlPath = new URL(window.location.href).pathname.split("/")[2];
     if (urlPath === "") {
         urlPath = "hosts"
     }

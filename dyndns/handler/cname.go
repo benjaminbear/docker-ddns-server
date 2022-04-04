@@ -24,6 +24,7 @@ func (h *Handler) ListCNames(c echo.Context) (err error) {
 
 	return c.Render(http.StatusOK, "listcnames", echo.Map{
 		"cnames": cnames,
+		"title":  h.Title,
 	})
 }
 
@@ -42,6 +43,7 @@ func (h *Handler) AddCName(c echo.Context) (err error) {
 	return c.Render(http.StatusOK, "addcname", echo.Map{
 		"config": h.Config,
 		"hosts":  hosts,
+		"title":  h.Title,
 	})
 }
 
