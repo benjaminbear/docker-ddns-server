@@ -26,4 +26,4 @@ COPY dyndns/views /root/views
 COPY dyndns/static /root/static
 
 EXPOSE 53 8080
-CMD ["sh", "-c", "/root/setup.sh ; service bind9 start ; /root/dyndns"]
+CMD ["sh", "-c", "/root/setup.sh ; service named start ; /root/dyndns"]
