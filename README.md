@@ -53,12 +53,15 @@ If you want to embed this into a docker-compose.yml you have to double the dolla
 ```
 echo $(htpasswd -nb user password) | sed -e s/\\$/\\$\\$/g
 ```
+If `DDNS_ADMIN_LOGIN` is not set, all /admin routes are without protection. (use case: auth proxy)
 
 `DDNS_DOMAINS` are the domains of the webservice and the domain zones of your dyndns server (see DNS Setup) i.e. `dyndns.example.com,dyndns.example.org` (comma separated list)
 
 `DDNS_PARENT_NS` is the parent name server of your domain i.e. `ns.example.com`
 
 `DDNS_DEFAULT_TTL` is the default TTL of your dyndns server.
+
+`DDNS_CLEAR_LOG_INTERVAL` clear log entries automatically in days (integer) e.g. `DDNS_CLEAR_LOG_INTERVAL:30`
 
 ### DNS setup
 
