@@ -142,13 +142,15 @@ $("button.copyUrlToClipboard").click(function () {
 });
 
 function randomHash() {
-    let chars = "abcdefghijklmnopqrstuvwxyz!@#$%^&*()-+<>ABCDEFGHIJKLMNOP1234567890";
-    let pass = "";
-    for (let x = 0; x < 32; x++) {
-        let i = Math.floor(Math.random() * chars.length);
-        pass += chars.charAt(i);
+    let chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    var passwordLength = 16;
+    var password = "";
+    for (var i = 0; i <= passwordLength; i++) {
+        var randomNumber = Math.floor(Math.random() * chars.length);
+        password += chars.substring(randomNumber, randomNumber +1);
     }
-    return pass;
+
+    return password;
 }
 
 $("button.generateHash").click(function () {
