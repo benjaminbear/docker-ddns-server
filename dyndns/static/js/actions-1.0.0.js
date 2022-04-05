@@ -132,7 +132,13 @@ $("button.copyUrlToClipboard").click(function () {
     let password = document.getElementById('host-password_'+id).innerHTML
     let out = location.protocol + '//' +username.trim()+':'+password.trim()+'@'+ domain
     out +='/update?hostname='+hostname
-    navigator.clipboard.writeText(out.trim());
+
+    let dummy = document.createElement("textarea");
+    document.body.appendChild(dummy);
+    dummy.value = out;
+    dummy.select();
+    document.execCommand("copy");
+    document.body.removeChild(dummy);
 });
 
 function randomHash() {
