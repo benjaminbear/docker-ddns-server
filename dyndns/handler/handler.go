@@ -48,10 +48,20 @@ type Error struct {
 // To gather admin rights the username password combination must match with the credentials given by the env var.
 func (h *Handler) AuthenticateUpdate(username, password string, c echo.Context) (bool, error) {
 	h.CheckClearInterval()
+	reqParameter := c.QueryParam("hostname")
+	reqArr := strings.SplitN(reqParameter, ".", 2)
+	if len(reqArr) != 2 {
+		log.Error("Error: Something wrong with the hostname parameter")
+		return false, nil
+	}
 
 	host := &model.Host{}
-	if err := h.DB.Where(&model.Host{UserName: username, Password: password}).First(host).Error; err != nil {
-		log.Error("Error:", err)
+	if err := h.DB.Where(&model.Host{UserName: username, Password: password, Hostname: reqArr[0], Domain: reqArr[1]}).First(host).Error; err != nil {
+		log.Error("Error: ", err)
+		return false, nil
+	}
+	if host.ID == 0 {
+		log.Error("hostname or user user credentials unknown")
 		return false, nil
 	}
 	c.Set("updateHost", host)
