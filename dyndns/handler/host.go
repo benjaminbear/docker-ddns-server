@@ -227,11 +227,12 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 // Hostname, IP and senders IP are validated, a log entry is created
 // and finally if everything is ok, the DNS Server will be updated
 func (h *Handler) UpdateIP(c echo.Context) (err error) {
-	if h.AuthHost == nil {
+	host, ok := c.Get("updateHost").(*model.Host)
+	if !ok {
 		return c.String(http.StatusBadRequest, "badauth\n")
 	}
 
-	log := &model.Log{Status: false, Host: *h.AuthHost, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
+	log := &model.Log{Status: false, Host: *host, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
 	log.SentIP = c.QueryParam(("myip"))
 
 	// Get caller IP
@@ -250,7 +251,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 
 	// Validate hostname
 	hostname := c.QueryParam("hostname")
-	if hostname == "" || hostname != h.AuthHost.Hostname+"."+h.AuthHost.Domain {
+	if hostname == "" || hostname != host.Hostname+"."+host.Domain {
 		log.Message = "Hostname or combination of authenticated user and hostname is invalid"
 		if err = h.CreateLogEntry(log); err != nil {
 			l.Error(err)

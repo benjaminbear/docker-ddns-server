@@ -18,7 +18,6 @@ import (
 
 type Handler struct {
 	DB               *gorm.DB
-	AuthHost         *model.Host
 	AuthAdmin        bool
 	Config           Envs
 	Title            string
@@ -49,15 +48,13 @@ type Error struct {
 // To gather admin rights the username password combination must match with the credentials given by the env var.
 func (h *Handler) AuthenticateUpdate(username, password string, c echo.Context) (bool, error) {
 	h.CheckClearInterval()
-	h.AuthHost = nil
 
 	host := &model.Host{}
 	if err := h.DB.Where(&model.Host{UserName: username, Password: password}).First(host).Error; err != nil {
 		log.Error("Error:", err)
 		return false, nil
 	}
-
-	h.AuthHost = host
+	c.Set("updateHost", host)
 
 	return true, nil
 }
