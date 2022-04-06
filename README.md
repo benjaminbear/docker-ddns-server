@@ -61,7 +61,9 @@ If `DDNS_ADMIN_LOGIN` is not set, all /admin routes are without protection. (use
 
 `DDNS_DEFAULT_TTL` is the default TTL of your dyndns server.
 
-`DDNS_CLEAR_LOG_INTERVAL` clear log entries automatically in days (integer) e.g. `DDNS_CLEAR_LOG_INTERVAL:30`
+`DDNS_CLEAR_LOG_INTERVAL` optional: clear log entries automatically in days (integer) e.g. `DDNS_CLEAR_LOG_INTERVAL:30`
+
+`DDNS_ALLOW_WILDCARD` optional: allows all `*.subdomain.dyndns.example.com` to point to your ip (boolean) e.g. `true`
 
 ### DNS setup
 
