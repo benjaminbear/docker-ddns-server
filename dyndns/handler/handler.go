@@ -24,6 +24,7 @@ type Handler struct {
 	DisableAdminAuth bool
 	LastClearedLogs  time.Time
 	ClearInterval    uint64
+	AllowWildcard    bool
 }
 
 type Envs struct {
@@ -112,17 +113,24 @@ func (h *Handler) ParseEnvs() (adminAuth bool, err error) {
 		h.AuthAdmin = true
 		h.DisableAdminAuth = true
 	}
-	h.Title = os.Getenv("DDNS_TITLE")
-	if h.Title == "" {
+	var ok bool
+	h.Title, ok = os.LookupEnv("DDNS_TITLE")
+	if !ok {
 		h.Title = "TheBBCloud DynDNS"
 	}
-
+	allowWildcard, ok := os.LookupEnv("DDNS_ALLOW_WILDCARD")
+	if ok {
+		h.AllowWildcard, err = strconv.ParseBool(allowWildcard)
+		if err == nil {
+			log.Info("Wildcard allowed")
+		}
+	}
 	clearEnv := os.Getenv("DDNS_CLEAR_LOG_INTERVAL")
 	clearInterval, err := strconv.ParseUint(clearEnv, 10, 32)
 	if err != nil {
 		log.Info("No log clear interval found")
 	} else {
-		log.Info("log clear interval found:", clearInterval, "days")
+		log.Info("log clear interval found: ", clearInterval, "days")
 		h.ClearInterval = clearInterval
 		if clearInterval > 0 {
 			h.LastClearedLogs = time.Now()

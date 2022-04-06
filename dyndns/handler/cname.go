@@ -79,7 +79,7 @@ func (h *Handler) CreateCName(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = nswrapper.UpdateRecord(cname.Hostname, fmt.Sprintf("%s.%s", cname.Target.Hostname, cname.Target.Domain), "CNAME", cname.Target.Domain, cname.Ttl); err != nil {
+	if err = nswrapper.UpdateRecord(cname.Hostname, fmt.Sprintf("%s.%s", cname.Target.Hostname, cname.Target.Domain), "CNAME", cname.Target.Domain, cname.Ttl, h.AllowWildcard); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
@@ -114,7 +114,7 @@ func (h *Handler) DeleteCName(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = nswrapper.DeleteRecord(cname.Hostname, cname.Target.Domain); err != nil {
+	if err = nswrapper.DeleteRecord(cname.Hostname, cname.Target.Domain, h.AllowWildcard); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 

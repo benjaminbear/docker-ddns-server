@@ -125,7 +125,7 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
+		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl, h.AllowWildcard); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -172,7 +172,7 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
+		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl, h.AllowWildcard); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -216,7 +216,7 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = nswrapper.DeleteRecord(host.Hostname, host.Domain); err != nil {
+	if err = nswrapper.DeleteRecord(host.Hostname, host.Domain, h.AllowWildcard); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
@@ -276,7 +276,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	}
 
 	// add/update DNS record
-	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl); err != nil {
+	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl, h.AllowWildcard); err != nil {
 		log.Message = fmt.Sprintf("DNS error: %v", err)
 		l.Error(log.Message)
 		if err = h.CreateLogEntry(log); err != nil {

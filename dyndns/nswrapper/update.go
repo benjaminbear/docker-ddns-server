@@ -11,7 +11,7 @@ import (
 )
 
 // UpdateRecord builds a nsupdate file and updates a record by executing it with nsupdate.
-func UpdateRecord(hostname string, target string, addrType string, zone string, ttl int) error {
+func UpdateRecord(hostname string, target string, addrType string, zone string, ttl int, enableWildcard bool) error {
 	log.Info(fmt.Sprintf("%s record update request: %s -> %s", addrType, hostname, target))
 
 	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
@@ -25,7 +25,13 @@ func UpdateRecord(hostname string, target string, addrType string, zone string, 
 	w.WriteString(fmt.Sprintf("server %s\n", "localhost"))
 	w.WriteString(fmt.Sprintf("zone %s\n", zone))
 	w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", hostname, zone, addrType))
+	if enableWildcard {
+		w.WriteString(fmt.Sprintf("update delete %s.%s %s\n", "*."+hostname, zone, addrType))
+	}
 	w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", hostname, zone, ttl, addrType, target))
+	if enableWildcard {
+		w.WriteString(fmt.Sprintf("update add %s.%s %v %s %s\n", "*."+hostname, zone, ttl, addrType, target))
+	}
 	w.WriteString("send\n")
 
 	w.Flush()
@@ -49,7 +55,7 @@ func UpdateRecord(hostname string, target string, addrType string, zone string, 
 }
 
 // DeleteRecord builds a nsupdate file and deletes a record by executing it with nsupdate.
-func DeleteRecord(hostname string, zone string) error {
+func DeleteRecord(hostname string, zone string, enableWildcard bool) error {
 	fmt.Printf("record delete request: %s\n", hostname)
 
 	f, err := ioutil.TempFile(os.TempDir(), "dyndns")
@@ -63,6 +69,9 @@ func DeleteRecord(hostname string, zone string) error {
 	w.WriteString(fmt.Sprintf("server %s\n", "localhost"))
 	w.WriteString(fmt.Sprintf("zone %s\n", zone))
 	w.WriteString(fmt.Sprintf("update delete %s.%s\n", hostname, zone))
+	if enableWildcard {
+		w.WriteString(fmt.Sprintf("update delete %s.%s\n", "*."+hostname, zone))
+	}
 	w.WriteString("send\n")
 
 	w.Flush()
