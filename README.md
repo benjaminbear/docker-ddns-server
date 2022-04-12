@@ -65,6 +65,8 @@ If `DDNS_ADMIN_LOGIN` is not set, all /admin routes are without protection. (use
 
 `DDNS_ALLOW_WILDCARD` optional: allows all `*.subdomain.dyndns.example.com` to point to your ip (boolean) e.g. `true`
 
+`DDNS_LOGOUT_URL` optional: allows a logout redirect to certain url by clicking the logout button (string) e.g. `https://example.com` 
+
 ### DNS setup
 
 If your parent domain is `example.com` and you want your dyndns domain to be `dyndns.example.com`,
