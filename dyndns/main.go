@@ -79,6 +79,15 @@ func main() {
 	groupAdmin.POST("/hosts/add", h.CreateHost)
 	groupAdmin.POST("/hosts/edit/:id", h.UpdateHost)
 	groupAdmin.GET("/hosts/delete/:id", h.DeleteHost)
+	//redirect to logout
+	groupAdmin.GET("/logout", func(c echo.Context) error {
+		// either custom url
+		if len(h.LogoutUrl) > 0 {
+			return c.Redirect(302, h.LogoutUrl)
+		}
+		// or standard url
+		return c.Redirect(302, "../")
+	})
 	groupAdmin.POST("/cnames/add", h.CreateCName)
 	groupAdmin.GET("/cnames/delete/:id", h.DeleteCName)
 

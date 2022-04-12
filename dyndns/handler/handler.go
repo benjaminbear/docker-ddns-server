@@ -25,6 +25,7 @@ type Handler struct {
 	LastClearedLogs  time.Time
 	ClearInterval    uint64
 	AllowWildcard    bool
+	LogoutUrl        string
 }
 
 type Envs struct {
@@ -125,6 +126,14 @@ func (h *Handler) ParseEnvs() (adminAuth bool, err error) {
 			log.Info("Wildcard allowed")
 		}
 	}
+	logoutUrl, ok := os.LookupEnv("DDNS_LOGOUT_URL")
+	if ok {
+		if len(logoutUrl) > 0 {
+			log.Info("Logout url set: ", logoutUrl)
+			h.LogoutUrl = logoutUrl
+		}
+	}
+
 	clearEnv := os.Getenv("DDNS_CLEAR_LOG_INTERVAL")
 	clearInterval, err := strconv.ParseUint(clearEnv, 10, 32)
 	if err != nil {

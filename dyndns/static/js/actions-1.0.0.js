@@ -64,6 +64,7 @@ $("button.add, button.edit").click(function () {
 });
 
 $("#logout").click(function (){
+    //document.execCommand("ClearAuthenticationCache");
         try {
             // This is for Firefox
             $.ajax({
@@ -73,7 +74,7 @@ $("#logout").click(function (){
                 password: 'reset',
                 // If the return is 401, refresh the page to request new details.
                 statusCode: { 401: function() {
-                        document.location = document.location;
+                       // document.location = document.location;
                     }
                 }
             });
@@ -83,9 +84,10 @@ $("#logout").click(function (){
             if (!document.execCommand("ClearAuthenticationCache")) {
                 // exeCommand returns false if it didn't work (which happens in Chrome) so as a last
                 // resort refresh the page providing new, invalid details.
-                document.location = "http://reset:reset@" + document.location.hostname + document.location.pathname;
+               // document.location = location.protocol+"//reset:reset@" + document.location.hostname + document.location.pathname;
             }
         }
+        console.log("first logout")
 });
 
 $("button.addCName").click(function () {
