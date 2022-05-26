@@ -7,13 +7,13 @@
     <meta name="author" content="">
     <link rel="icon" href="/static/icons/favicon.ico">
 
-    <title>TheBBCloud DynDNS</title>
+    <title>{{.title}}</title>
 
     <!-- Bootstrap core CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
 
     <!-- JQueryUI base CSS -->
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.min.css" integrity="sha256-sEGfrwMkIjbgTBwGLVK38BG/XwIiNC/EAG9Rzsfda6A=" crossorigin="anonymous" />
+    <link rel="stylesheet" href="/static/css/jquery-ui.min.css"/>
 
     <!-- Custom styles for this template -->
     <link href="/static/css/narrow-jumbotron.css" rel="stylesheet">
@@ -27,27 +27,27 @@
         <nav>
             <ul class="nav nav-pills float-right">
                 <li class="nav-item">
-                    <a class="nav-link nav-hosts" href="/hosts">Hosts</a>
+                    <a class="nav-link nav-hosts" href="/admin/hosts">Hosts</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link nav-cnames" href="/cnames">CNames</a>
+                    <a class="nav-link nav-cnames" href="/admin/cnames">CNames</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link nav-logs" href="/logs">Logs</a>
+                    <a class="nav-link nav-logs" href="/admin/logs">Logs</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link nav-logout" href="" id="logout">Logout</a>
+                    <a class="nav-link nav-logout" href="/admin/logout" id="logout">Logout</a>
                 </li>
             </ul>
         </nav>
-        <h3 class="text-muted">TheBBCloud DynDNS</h3>
+        <h3 class="text-muted">{{.title}}</h3>
     </div>
 
     <!-- Page Content -->
     {{template "content" .}}
 
     <footer class="footer">
-        <p>&copy; TheBBCloud 2021</p>
+        <p>&copy; {{.title}} {{year}}</p>
     </footer>
 
 </div> <!-- /container -->
@@ -56,10 +56,11 @@
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+<script src="/static/js/jquery-3.4.1.min.js"></script>
+<!-- popper.js@1.16.0 -->
+<script src="/static/js/popper.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/jquery-ui.min.js"></script>
 <script src="/static/js/actions-1.0.0.js"></script>
 </body>
 </html>

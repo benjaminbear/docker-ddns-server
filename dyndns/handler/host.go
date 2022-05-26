@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	l "github.com/labstack/gommon/log"
 	"net"
 	"net/http"
 	"strconv"
@@ -51,6 +52,7 @@ func (h *Handler) ListHosts(c echo.Context) (err error) {
 
 	return c.Render(http.StatusOK, "listhosts", echo.Map{
 		"hosts": hosts,
+		"title": h.Title,
 	})
 }
 
@@ -63,6 +65,7 @@ func (h *Handler) AddHost(c echo.Context) (err error) {
 	return c.Render(http.StatusOK, "edithost", echo.Map{
 		"addEdit": "add",
 		"config":  h.Config,
+		"title":   h.Title,
 	})
 }
 
@@ -86,6 +89,7 @@ func (h *Handler) EditHost(c echo.Context) (err error) {
 		"host":    host,
 		"addEdit": "edit",
 		"config":  h.Config,
+		"title":   h.Title,
 	})
 }
 
@@ -109,7 +113,7 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 	if err = h.checkUniqueHostname(host.Hostname, host.Domain); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
-
+	host.LastUpdate = time.Now()
 	if err = h.DB.Create(host).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -121,7 +125,7 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
+		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl, h.AllowWildcard); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -168,7 +172,7 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
 		}
 
-		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl); err != nil {
+		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl, h.AllowWildcard); err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 	}
@@ -212,7 +216,7 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = nswrapper.DeleteRecord(host.Hostname, host.Domain); err != nil {
+	if err = nswrapper.DeleteRecord(host.Hostname, host.Domain, h.AllowWildcard); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
@@ -223,11 +227,12 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 // Hostname, IP and senders IP are validated, a log entry is created
 // and finally if everything is ok, the DNS Server will be updated
 func (h *Handler) UpdateIP(c echo.Context) (err error) {
-	if h.AuthHost == nil {
+	host, ok := c.Get("updateHost").(*model.Host)
+	if !ok {
 		return c.String(http.StatusBadRequest, "badauth\n")
 	}
 
-	log := &model.Log{Status: false, Host: *h.AuthHost, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
+	log := &model.Log{Status: false, Host: *host, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
 	log.SentIP = c.QueryParam(("myip"))
 
 	// Get caller IP
@@ -237,7 +242,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		if err != nil {
 			log.Message = "Bad Request: Unable to get caller IP"
 			if err = h.CreateLogEntry(log); err != nil {
-				fmt.Println(err)
+				l.Error(err)
 			}
 
 			return c.String(http.StatusBadRequest, "badrequest\n")
@@ -246,10 +251,10 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 
 	// Validate hostname
 	hostname := c.QueryParam("hostname")
-	if hostname == "" || hostname != h.AuthHost.Hostname+"."+h.AuthHost.Domain {
+	if hostname == "" || hostname != host.Hostname+"."+host.Domain {
 		log.Message = "Hostname or combination of authenticated user and hostname is invalid"
 		if err = h.CreateLogEntry(log); err != nil {
-			fmt.Println(err)
+			l.Error(err)
 		}
 
 		return c.String(http.StatusBadRequest, "notfqdn\n")
@@ -263,7 +268,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		if ipType == "" {
 			log.Message = "Bad Request: Sent IP is invalid"
 			if err = h.CreateLogEntry(log); err != nil {
-				fmt.Println(err)
+				l.Error(err)
 			}
 
 			return c.String(http.StatusBadRequest, "badrequest\n")
@@ -271,12 +276,12 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	}
 
 	// add/update DNS record
-	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl); err != nil {
+	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl, h.AllowWildcard); err != nil {
 		log.Message = fmt.Sprintf("DNS error: %v", err)
+		l.Error(log.Message)
 		if err = h.CreateLogEntry(log); err != nil {
-			fmt.Println(err)
+			l.Error(err)
 		}
-
 		return c.String(http.StatusBadRequest, "dnserr\n")
 	}
 
@@ -285,7 +290,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	log.Status = true
 	log.Message = "No errors occurred"
 	if err = h.CreateLogEntry(log); err != nil {
-		fmt.Println(err)
+		l.Error(err)
 	}
 
 	return c.String(http.StatusOK, "good\n")

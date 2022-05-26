@@ -4,9 +4,12 @@ ENV GO111MODULE=on
 ENV GOPATH=/root/go
 RUN mkdir -p /root/go/src
 COPY dyndns /root/go/src/dyndns
-RUN cd /root/go/src/dyndns && go mod download && GOOS=linux GOARCH=amd64 go build -o /root/go/bin/dyndns && go test -v
+WORKDIR /root/go/src/dyndns
+RUN go mod download
+RUN go mod verify
+RUN GOOS=linux go build -o /root/go/bin/dyndns && go test -v
 
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -q -y bind9 dnsutils curl && \
@@ -23,4 +26,4 @@ COPY dyndns/views /root/views
 COPY dyndns/static /root/static
 
 EXPOSE 53 8080
-CMD ["sh", "-c", "/root/setup.sh ; service bind9 start ; /root/dyndns"]
+CMD ["sh", "-c", "/root/setup.sh ; service named start ; /root/dyndns"]

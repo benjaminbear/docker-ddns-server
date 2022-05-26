@@ -1,27 +1,54 @@
 {{define "content"}}
-    <div class="container marketing">
-        <h3 class="text-center mb-4">DNS Host Entries</h3>
-        <table class="table table-striped text-center">
-            <thead>
-            <tr>
-                <th>Hostname</th>
-                <th>IP</th>
-                <th>TTL</th>
-                <th>LastUpdate</th>
-                <th><button class="addHost btn btn-primary">Add Host Entry</button></th>
-            </tr>
-            </thead>
-            <tbody>
-            {{range .hosts}}
-                <tr>
-                    <td>{{.Hostname}}.{{.Domain}}</td>
-                    <td>{{.Ip}}</td>
-                    <td>{{.Ttl}}</td>
-                    <td>{{.LastUpdate.Format "01/02/2006 15:04 MEZ"}}</td>
-                    <td><button id="{{.ID}}" class="editHost btn btn-outline-secondary btn-sm"><img src="/static/icons/pencil.svg" alt="" width="16" height="16" title="Edit"></button>&nbsp;<button id="{{.ID}}" class="deleteHost btn btn-outline-secondary btn-sm"><img src="/static/icons/trash.svg" alt="" width="16" height="16" title="Delete"></button> <button id="{{.ID}}" class="showHostLog btn btn-outline-secondary btn-sm"><img src="/static/icons/table.svg" alt="" width="16" height="16" title="Logs"></button></td>
-                </tr>
-            {{end}}
-            </tbody>
-        </table>
-    </div>
+<div class="container marketing">
+    <h3 class="text-center mb-4">DNS Host Entries</h3>
+    <table class="table table-striped text-center">
+        <thead>
+        <tr>
+            <th>Domain</th>
+            <th>Hostname</th>
+            <th>IP</th>
+            <th>TTL</th>
+            <th>LastUpdate</th>
+            <th>
+                <button class="addHost btn btn-primary">Add Host Entry</button>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .hosts}}
+        <tr id="host_{{.ID}}">
+            <td id="host-domain_{{.ID}}">{{.Domain}}</td>
+            <td id="host-hostname_{{.ID}}">{{.Hostname}}.{{.Domain}}</td>
+            <td>{{.Ip}}</td>
+            <td>{{.Ttl}}</td>
+            <td>{{.LastUpdate.Format "01/02/2006 15:04 MEZ"}}</td>
+            <td>
+                <div style="display:none">
+                    <div id="host-username_{{.ID}}">
+                        {{.UserName}}
+                    </div>
+                    <div id="host-password_{{.ID}}" >
+                        {{.Password}}
+                    </div>
+                </div>
+
+                <div class="btn-group" id="host_{{.ID}}" >
+                    <button id="{{.ID}}" class="editHost btn btn-outline-secondary btn-sm"><img
+                            src="/static/icons/pencil.svg" alt="" width="16" height="16" title="Edit"></button>&nbsp;
+                    <button
+                            id="{{.ID}}" class="deleteHost btn btn-outline-secondary btn-sm"><img
+                            src="/static/icons/trash.svg"
+                            alt="" width="16" height="16"
+                            title="Delete"></button> &nbsp;
+                    <button id="{{.ID}}" class="showHostLog btn btn-outline-secondary btn-sm"><img
+                            src="/static/icons/table.svg" alt="" width="16" height="16" title="Logs"></button> &nbsp;
+                    <button id="{{.ID}}" class="copyUrlToClipboard btn btn-outline-secondary btn-sm"><img
+                            src="/static/icons/clipboard.svg" alt="" width="16" height="16" title="Copy URL to clipboard"></button>
+                </div>
+            </td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+</div>
 {{end}}

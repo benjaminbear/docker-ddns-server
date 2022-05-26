@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
 	"github.com/labstack/echo/v4"
@@ -24,12 +26,13 @@ func (h *Handler) ShowLogs(c echo.Context) (err error) {
 	}
 
 	logs := new([]model.Log)
-	if err = h.DB.Preload("Host").Limit(30).Find(logs).Error; err != nil {
+	if err = h.DB.Preload("Host").Limit(30).Order("created_at desc").Find(logs).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
 	return c.Render(http.StatusOK, "listlogs", echo.Map{
-		"logs": logs,
+		"logs":  logs,
+		"title": h.Title,
 	})
 }
 
@@ -45,11 +48,19 @@ func (h *Handler) ShowHostLogs(c echo.Context) (err error) {
 	}
 
 	logs := new([]model.Log)
-	if err = h.DB.Preload("Host").Where(&model.Log{HostID: uint(id)}).Limit(30).Find(logs).Error; err != nil {
+	if err = h.DB.Preload("Host").Where(&model.Log{HostID: uint(id)}).Order("created_at desc").Limit(30).Find(logs).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
 	return c.Render(http.StatusOK, "listlogs", echo.Map{
-		"logs": logs,
+		"logs":  logs,
+		"title": h.Title,
 	})
+}
+
+func (h *Handler) ClearLogs() {
+	var clearInterval = strconv.FormatUint(h.ClearInterval, 10) + " day"
+	h.DB.Exec("DELETE FROM LOGS WHERE created_at < datetime('now', '-" + clearInterval + "');REINDEX LOGS;")
+	h.LastClearedLogs = time.Now()
+	log.Print("logs cleared")
 }
