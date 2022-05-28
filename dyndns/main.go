@@ -98,7 +98,7 @@ func main() {
 	updateRoute.GET("", h.UpdateIP)
 	nicRoute := e.Group("/nic")
 	nicRoute.Use(middleware.BasicAuth(h.AuthenticateUpdate))
-	updateRoute.GET("/update", h.UpdateIP)
+	nicRoute.GET("/update", h.UpdateIP)
 	v2Route := e.Group("/v2")
 	v2Route.Use(middleware.BasicAuth(h.AuthenticateUpdate))
 	v2Route.GET("/update", h.UpdateIP)
