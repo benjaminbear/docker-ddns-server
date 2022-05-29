@@ -14,7 +14,7 @@ type Host struct {
 	Ip         string    `form:"ip" validate:"omitempty,ipv4"`
 	Ttl        int       `form:"ttl" validate:"required,min=20,max=86400"`
 	LastUpdate time.Time `form:"lastupdate"`
-	UserName   string    `gorm:"unique" form:"username" validate:"min=8"`
+	UserName   string    `gorm:"unique" form:"username" validate:"min=3"`
 	Password   string    `form:"password" validate:"min=8"`
 }
 
