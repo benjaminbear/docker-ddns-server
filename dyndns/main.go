@@ -59,7 +59,7 @@ func main() {
 	groupPublic := e.Group("/")
 	groupPublic.GET("*", func(c echo.Context) error {
 		//redirect to admin
-		return c.Redirect(301, "./admin/")
+		return c.Redirect(301, "/admin/")
 	})
 	groupAdmin := e.Group("/admin")
 	if authAdmin {
