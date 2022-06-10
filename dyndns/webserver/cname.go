@@ -1,14 +1,12 @@
-package handler
+package webserver
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
-	"github.com/benjaminbear/docker-ddns-server/dyndns/nswrapper"
-	"github.com/jinzhu/gorm"
+	"github.com/benjaminbear/docker-ddns-server/dyndns/db"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 // ListCNames fetches all cnames from database and lists them on the website.
@@ -17,14 +15,14 @@ func (h *Handler) ListCNames(c echo.Context) (err error) {
 		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
-	cnames := new([]model.CName)
+	cnames := new([]db.CName)
 	if err = h.DB.Preload("Target").Find(cnames).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
 	return c.Render(http.StatusOK, "listcnames", echo.Map{
 		"cnames": cnames,
-		"title":  h.Title,
+		"title":  h.Config.Title,
 	})
 }
 
@@ -35,7 +33,7 @@ func (h *Handler) AddCName(c echo.Context) (err error) {
 		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
-	hosts := new([]model.Host)
+	hosts := new([]db.Host)
 	if err = h.DB.Find(hosts).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -43,7 +41,7 @@ func (h *Handler) AddCName(c echo.Context) (err error) {
 	return c.Render(http.StatusOK, "addcname", echo.Map{
 		"config": h.Config,
 		"hosts":  hosts,
-		"title":  h.Title,
+		"title":  h.Config.Title,
 	})
 }
 
@@ -55,12 +53,12 @@ func (h *Handler) CreateCName(c echo.Context) (err error) {
 		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
-	cname := &model.CName{}
+	cname := &db.CName{}
 	if err = c.Bind(cname); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	host := &model.Host{}
+	host := &db.Host{}
 	if err = h.DB.First(host, c.FormValue("target_id")).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -79,10 +77,6 @@ func (h *Handler) CreateCName(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	if err = nswrapper.UpdateRecord(cname.Hostname, fmt.Sprintf("%s.%s", cname.Target.Hostname, cname.Target.Domain), "CNAME", cname.Target.Domain, cname.Ttl, h.AllowWildcard); err != nil {
-		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-	}
-
 	return c.JSON(http.StatusOK, cname)
 }
 
@@ -98,7 +92,7 @@ func (h *Handler) DeleteCName(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	cname := &model.CName{}
+	cname := &db.CName{}
 	if err = h.DB.Preload("Target").First(cname, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -111,10 +105,6 @@ func (h *Handler) DeleteCName(c echo.Context) (err error) {
 		return nil
 	})
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-	}
-
-	if err = nswrapper.DeleteRecord(cname.Hostname, cname.Target.Domain, h.AllowWildcard); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 

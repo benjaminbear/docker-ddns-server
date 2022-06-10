@@ -1,7 +1,7 @@
-package model
+package db
 
 import (
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // CName is a dns cname entry.

@@ -1,20 +1,33 @@
 package main
 
 import (
-	"github.com/benjaminbear/docker-ddns-server/dyndns/handler"
-	"github.com/foolin/goview"
-	"github.com/foolin/goview/supports/echoview-v4"
-	"github.com/go-playground/validator/v10"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	"github.com/labstack/gommon/log"
 	"html/template"
 	"net/http"
 	"time"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/db"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/dnsserver"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/config"
+
+	"github.com/benjaminbear/docker-ddns-server/dyndns/webserver"
+
+	"github.com/foolin/goview"
+	"github.com/foolin/goview/supports/echoview-v4"
+	"github.com/go-playground/validator/v10"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 )
 
 func main() {
+	// Parse Config
+	conf, err := config.ParseEnvs()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Set new instance
 	e := echo.New()
 
@@ -36,24 +49,19 @@ func main() {
 	})
 
 	// Set Validator
-	e.Validator = &handler.CustomValidator{Validator: validator.New()}
+	e.Validator = &webserver.CustomValidator{Validator: validator.New()}
 
 	// Set Statics
 	e.Static("/static", "static")
 
-	// Initialize handler
-	h := &handler.Handler{}
-
 	// Database connection
-	if err := h.InitDB(); err != nil {
-		e.Logger.Fatal(err)
-	}
-	defer h.DB.Close()
-
-	authAdmin, err := h.ParseEnvs()
+	dbConn, err := db.InitDB()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
+
+	// Initialize webserver
+	h := webserver.New(conf, dbConn)
 
 	// UI Routes
 	groupPublic := e.Group("/")
@@ -62,7 +70,7 @@ func main() {
 		return c.Redirect(301, "./admin/")
 	})
 	groupAdmin := e.Group("/admin")
-	if authAdmin {
+	if conf.AdminLogin != "" {
 		groupAdmin.Use(middleware.BasicAuth(h.AuthenticateAdmin))
 	}
 
@@ -82,8 +90,8 @@ func main() {
 	//redirect to logout
 	groupAdmin.GET("/logout", func(c echo.Context) error {
 		// either custom url
-		if len(h.LogoutUrl) > 0 {
-			return c.Redirect(302, h.LogoutUrl)
+		if conf.LogoutUrl != "" {
+			return c.Redirect(302, conf.LogoutUrl)
 		}
 		// or standard url
 		return c.Redirect(302, "../")
@@ -108,11 +116,26 @@ func main() {
 
 	// health-check
 	e.GET("/ping", func(c echo.Context) error {
-		u := &handler.Error{
+		u := &webserver.Error{
 			Message: "OK",
 		}
 		return c.JSON(http.StatusOK, u)
 	})
+
+	// Start DNS Server
+	dnsServer := &dnsserver.Server{
+		Host:     "",
+		Port:     53,
+		RTimeout: 5 * time.Second,
+		WTimeout: 5 * time.Second,
+	}
+
+	handler := &dnsserver.Handler{
+		Config: conf,
+		DB:     dbConn,
+	}
+
+	dnsServer.Run(handler)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))

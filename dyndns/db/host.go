@@ -1,9 +1,10 @@
-package model
+package db
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Host is a dns host entry.
@@ -33,4 +34,8 @@ func (h *Host) UpdateHost(updateHost *Host) (updateRecord bool) {
 	h.Password = updateHost.Password
 
 	return
+}
+
+func (h *Host) FullDomain() string {
+	return fmt.Sprintf("%s.%s", h.Hostname, h.Domain)
 }

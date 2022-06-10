@@ -1,18 +1,19 @@
-package handler
+package webserver
 
 import (
 	"fmt"
-	l "github.com/labstack/gommon/log"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
+	l "github.com/labstack/gommon/log"
+
 	"github.com/benjaminbear/docker-ddns-server/dyndns/nswrapper"
 
-	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
-	"github.com/jinzhu/gorm"
+	"github.com/benjaminbear/docker-ddns-server/dyndns/db"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 const (
@@ -30,7 +31,7 @@ func (h *Handler) GetHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	host := &model.Host{}
+	host := &db.Host{}
 	if err = h.DB.First(host, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -45,14 +46,14 @@ func (h *Handler) ListHosts(c echo.Context) (err error) {
 		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
-	hosts := new([]model.Host)
+	hosts := new([]db.Host)
 	if err = h.DB.Find(hosts).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
 	return c.Render(http.StatusOK, "listhosts", echo.Map{
 		"hosts": hosts,
-		"title": h.Title,
+		"title": h.Config.Title,
 	})
 }
 
@@ -65,7 +66,7 @@ func (h *Handler) AddHost(c echo.Context) (err error) {
 	return c.Render(http.StatusOK, "edithost", echo.Map{
 		"addEdit": "add",
 		"config":  h.Config,
-		"title":   h.Title,
+		"title":   h.Config.Title,
 	})
 }
 
@@ -80,7 +81,7 @@ func (h *Handler) EditHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	host := &model.Host{}
+	host := &db.Host{}
 	if err = h.DB.First(host, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -89,7 +90,7 @@ func (h *Handler) EditHost(c echo.Context) (err error) {
 		"host":    host,
 		"addEdit": "edit",
 		"config":  h.Config,
-		"title":   h.Title,
+		"title":   h.Config.Title,
 	})
 }
 
@@ -101,7 +102,7 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
-	host := &model.Host{}
+	host := &db.Host{}
 	if err = c.Bind(host); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -118,18 +119,6 @@ func (h *Handler) CreateHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	// If a ip is set create dns entry
-	if host.Ip != "" {
-		ipType := nswrapper.GetIPType(host.Ip)
-		if ipType == "" {
-			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
-		}
-
-		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl, h.AllowWildcard); err != nil {
-			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-		}
-	}
-
 	return c.JSON(http.StatusOK, host)
 }
 
@@ -141,7 +130,7 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusUnauthorized, &Error{UNAUTHORIZED})
 	}
 
-	hostUpdate := &model.Host{}
+	hostUpdate := &db.Host{}
 	if err = c.Bind(hostUpdate); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -151,30 +140,17 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	host := &model.Host{}
+	host := &db.Host{}
 	if err = h.DB.First(host, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	forceRecordUpdate := host.UpdateHost(hostUpdate)
 	if err = c.Validate(host); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
 	if err = h.DB.Save(host).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-	}
-
-	// If ip or ttl changed update dns entry
-	if forceRecordUpdate {
-		ipType := nswrapper.GetIPType(host.Ip)
-		if ipType == "" {
-			return c.JSON(http.StatusBadRequest, &Error{fmt.Sprintf("ip %s is not a valid ip", host.Ip)})
-		}
-
-		if err = nswrapper.UpdateRecord(host.Hostname, host.Ip, ipType, host.Domain, host.Ttl, h.AllowWildcard); err != nil {
-			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-		}
 	}
 
 	return c.JSON(http.StatusOK, host)
@@ -192,7 +168,7 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
-	host := &model.Host{}
+	host := &db.Host{}
 	if err = h.DB.First(host, id).Error; err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -202,21 +178,17 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 
-		if err = tx.Where(&model.Log{HostID: uint(id)}).Delete(&model.Log{}).Error; err != nil {
+		if err = tx.Where(&db.Log{HostID: uint(id)}).Delete(&db.Log{}).Error; err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 
-		if err = tx.Where(&model.CName{TargetID: uint(id)}).Delete(&model.CName{}).Error; err != nil {
+		if err = tx.Where(&db.CName{TargetID: uint(id)}).Delete(&db.CName{}).Error; err != nil {
 			return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 		}
 
 		return nil
 	})
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-	}
-
-	if err = nswrapper.DeleteRecord(host.Hostname, host.Domain, h.AllowWildcard); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
@@ -227,12 +199,12 @@ func (h *Handler) DeleteHost(c echo.Context) (err error) {
 // Hostname, IP and senders IP are validated, a log entry is created
 // and finally if everything is ok, the DNS Server will be updated
 func (h *Handler) UpdateIP(c echo.Context) (err error) {
-	host, ok := c.Get("updateHost").(*model.Host)
+	host, ok := c.Get("updateHost").(*db.Host)
 	if !ok {
 		return c.String(http.StatusBadRequest, "badauth\n")
 	}
 
-	log := &model.Log{Status: false, Host: *host, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
+	log := &db.Log{Status: false, Host: *host, TimeStamp: time.Now(), UserAgent: nswrapper.ShrinkUserAgent(c.Request().UserAgent())}
 	log.SentIP = c.QueryParam(("myip"))
 
 	// Get caller IP
@@ -275,16 +247,6 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		}
 	}
 
-	// add/update DNS record
-	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl, h.AllowWildcard); err != nil {
-		log.Message = fmt.Sprintf("DNS error: %v", err)
-		l.Error(log.Message)
-		if err = h.CreateLogEntry(log); err != nil {
-			l.Error(err)
-		}
-		return c.String(http.StatusBadRequest, "dnserr\n")
-	}
-
 	log.Host.Ip = log.SentIP
 	log.Host.LastUpdate = log.TimeStamp
 	log.Status = true
@@ -297,8 +259,8 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 }
 
 func (h *Handler) checkUniqueHostname(hostname, domain string) error {
-	hosts := new([]model.Host)
-	if err := h.DB.Where(&model.Host{Hostname: hostname, Domain: domain}).Find(hosts).Error; err != nil {
+	hosts := new([]db.Host)
+	if err := h.DB.Where(&db.Host{Hostname: hostname, Domain: domain}).Find(hosts).Error; err != nil {
 		return err
 	}
 
@@ -306,8 +268,8 @@ func (h *Handler) checkUniqueHostname(hostname, domain string) error {
 		return fmt.Errorf("hostname already exists")
 	}
 
-	cnames := new([]model.CName)
-	if err := h.DB.Preload("Target").Where(&model.CName{Hostname: hostname}).Find(cnames).Error; err != nil {
+	cnames := new([]db.CName)
+	if err := h.DB.Preload("Target").Where(&db.CName{Hostname: hostname}).Find(cnames).Error; err != nil {
 		return err
 	}
 

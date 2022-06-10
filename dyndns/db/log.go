@@ -1,9 +1,9 @@
-package model
+package db
 
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 // Log defines a log entry.
