@@ -1,15 +1,16 @@
-FROM golang:latest as builder
+FROM golang:1.18 as builder
 
 ENV GO111MODULE=on
 ENV GOPATH=/root/go
 RUN mkdir -p /root/go/src
 COPY dyndns /root/go/src/dyndns
 WORKDIR /root/go/src/dyndns
-RUN go mod download
-RUN go mod verify
+# temp sqlite3 error fix
+ENV CGO_CFLAGS "-g -O2 -Wno-return-local-addr"
+RUN go mod tidy
 RUN GOOS=linux go build -o /root/go/bin/dyndns && go test -v
 
-FROM debian:bullseye-slim
+FROM debian:11-slim
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 	apt-get install -q -y bind9 dnsutils curl && \
