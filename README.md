@@ -1,14 +1,12 @@
 # Dynamic DNS Server for Docker with Web UI written in Go
 
 ![Travis build status](https://travis-ci.com/benjaminbear/docker-ddns-server.svg?branch=master)
-![Docker build status](https://img.shields.io/docker/cloud/build/bbaerthlein/docker-ddns-server)
-![Docker build automated](https://img.shields.io/docker/cloud/automated/bbaerthlein/docker-ddns-server)
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/benjaminbear/docker-ddns-server)
 ![Go version](https://img.shields.io/github/go-mod/go-version/benjaminbear/docker-ddns-server?filename=dyndns%2Fgo.mod)
 ![License](https://img.shields.io/github/license/benjaminbear/docker-ddns-server)
 
-With docker-ddns-server you can setup your own dynamic DNS server. This project is inspired by https://github.com/dprandzioch/docker-ddns . In addition to the original version, you can setup and maintain your dyndns entries via simple web ui.
+With docker-ddns-server you can set up your own dynamic DNS server. This project is inspired by https://github.com/dprandzioch/docker-ddns . In addition to the original version, you can setup and maintain your dyndns entries via simple web ui.
 
 <p float="left">
 <img src="https://raw.githubusercontent.com/benjaminbear/docker-ddns-server/master/img/addhost.png" width="285">
