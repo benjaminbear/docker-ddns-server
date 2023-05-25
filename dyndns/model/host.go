@@ -11,7 +11,7 @@ type Host struct {
 	gorm.Model
 	Hostname   string    `gorm:"unique_index:idx_host_domain;not null" form:"hostname" validate:"required,hostname"`
 	Domain     string    `gorm:"unique_index:idx_host_domain;not null" form:"domain" validate:"required,hostname"`
-	Ip         string    `form:"ip" validate:"omitempty,ipv4"`
+	Ip         string    `form:"ip" validate:"omitempty,ipv4|ipv6"`
 	Ttl        int       `form:"ttl" validate:"required,min=20,max=86400"`
 	LastUpdate time.Time `form:"lastupdate"`
 	UserName   string    `gorm:"unique" form:"username" validate:"min=3"`
