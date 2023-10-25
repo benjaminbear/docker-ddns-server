@@ -8,6 +8,7 @@ services:
       DDNS_DOMAINS: 'dyndns.example.com'
       DDNS_PARENT_NS: 'ns.example.com'
       DDNS_DEFAULT_TTL: '3600'
+      DDNS_TRANSFER: 'none'
     ports:
       - "53:53"
       - "53:53/udp"
