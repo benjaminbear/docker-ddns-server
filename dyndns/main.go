@@ -1,17 +1,17 @@
 package main
 
 import (
+	"html/template"
+	"net/http"
+	"time"
+
 	"github.com/benjaminbear/docker-ddns-server/dyndns/handler"
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/echoview-v4"
 	"github.com/go-playground/validator/v10"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"html/template"
-	"net/http"
-	"time"
 )
 
 func main() {
@@ -48,7 +48,6 @@ func main() {
 	if err := h.InitDB(); err != nil {
 		e.Logger.Fatal(err)
 	}
-	defer h.DB.Close()
 
 	authAdmin, err := h.ParseEnvs()
 	if err != nil {

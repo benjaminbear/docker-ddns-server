@@ -2,17 +2,18 @@ package handler
 
 import (
 	"fmt"
-	l "github.com/labstack/gommon/log"
 	"net"
 	"net/http"
 	"strconv"
 	"time"
 
+	l "github.com/labstack/gommon/log"
+
 	"github.com/benjaminbear/docker-ddns-server/dyndns/nswrapper"
 
 	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 const (
