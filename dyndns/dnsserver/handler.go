@@ -68,7 +68,7 @@ func (h *Handler) Resolve(question dns.Question) ([]dns.RR, error) {
 	case dns.TypeAAAA:
 		// ResolveIP
 		fmt.Println("IPResolve")
-		ipResolveChain := []func(fqdn string) ([]dns.RR, error){h.ResolveDNSA, h.ResolveA, h.ResolveCName}
+		ipResolveChain := []func(fqdn string) ([]dns.RR, error){h.ResolveA, h.ResolveCName}
 
 		for i, resolveFunc := range ipResolveChain {
 			answers, err := resolveFunc(question.Name)
