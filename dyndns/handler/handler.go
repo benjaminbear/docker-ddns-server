@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+
 	"github.com/labstack/gommon/log"
 
 	"os"
@@ -11,9 +12,10 @@ import (
 
 	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
 	"github.com/go-playground/validator/v10"
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
 	"github.com/tg123/go-htpasswd"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -163,24 +165,14 @@ func (h *Handler) InitDB() (err error) {
 		}
 	}
 
-	h.DB, err = gorm.Open("sqlite3", "database/ddns.db")
+	h.DB, err = gorm.Open(sqlite.Open("database/ddns.db"), &gorm.Config{})
 	if err != nil {
 		return err
 	}
 
-	if !h.DB.HasTable(&model.Host{}) {
-		h.DB.CreateTable(&model.Host{})
-	}
+	err = h.DB.AutoMigrate(&model.Host{}, &model.CName{}, &model.Log{})
 
-	if !h.DB.HasTable(&model.CName{}) {
-		h.DB.CreateTable(&model.CName{})
-	}
-
-	if !h.DB.HasTable(&model.Log{}) {
-		h.DB.CreateTable(&model.Log{})
-	}
-
-	return nil
+	return err
 }
 
 // Check if a log cleaning is needed

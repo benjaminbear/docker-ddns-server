@@ -7,8 +7,8 @@ import (
 
 	"github.com/benjaminbear/docker-ddns-server/dyndns/model"
 	"github.com/benjaminbear/docker-ddns-server/dyndns/nswrapper"
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 // ListCNames fetches all cnames from database and lists them on the website.
