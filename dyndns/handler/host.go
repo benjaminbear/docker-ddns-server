@@ -237,7 +237,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 	log.SentIP = c.QueryParam(("myip"))
 
 	// Get caller IP
-	log.CallerIP, err = nswrapper.GetCallerIP(c.Request())
+	log.CallerIP, _ = nswrapper.GetCallerIP(c.Request())
 	if log.CallerIP == "" {
 		log.CallerIP, _, err = net.SplitHostPort(c.Request().RemoteAddr)
 		if err != nil {
@@ -276,7 +276,7 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		}
 	}
 
-	// add/update DNS record
+	// Add/update DNS record
 	if err = nswrapper.UpdateRecord(log.Host.Hostname, log.SentIP, ipType, log.Host.Domain, log.Host.Ttl, h.AllowWildcard); err != nil {
 		log.Message = fmt.Sprintf("DNS error: %v", err)
 		l.Error(log.Message)
@@ -286,8 +286,14 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		return c.String(http.StatusBadRequest, "dnserr\n")
 	}
 
+	// Update DB host entry
 	log.Host.Ip = log.SentIP
 	log.Host.LastUpdate = log.TimeStamp
+
+	if err = h.DB.Save(log.Host).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, "badrequest\n")
+	}
+
 	log.Status = true
 	log.Message = "No errors occurred"
 	if err = h.CreateLogEntry(log); err != nil {
