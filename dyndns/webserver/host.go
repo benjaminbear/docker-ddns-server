@@ -145,6 +145,8 @@ func (h *Handler) UpdateHost(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
 
+	_ = host.UpdateHost(hostUpdate)
+
 	if err = c.Validate(host); err != nil {
 		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
 	}
@@ -247,8 +249,14 @@ func (h *Handler) UpdateIP(c echo.Context) (err error) {
 		}
 	}
 
+	// Update DB host entry
 	log.Host.Ip = log.SentIP
 	log.Host.LastUpdate = log.TimeStamp
+
+	if err = h.DB.Save(log.Host).Error; err != nil {
+		return c.JSON(http.StatusBadRequest, "badrequest\n")
+	}
+
 	log.Status = true
 	log.Message = "No errors occurred"
 	if err = h.CreateLogEntry(log); err != nil {
