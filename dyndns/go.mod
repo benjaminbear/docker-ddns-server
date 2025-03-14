@@ -7,7 +7,7 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/labstack/gommon v0.4.2
-	github.com/tg123/go-htpasswd v1.2.2
+	github.com/tg123/go-htpasswd v1.2.3
 	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.10
 )
