@@ -3,8 +3,10 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/foolin/goview"
 	"github.com/foolin/goview/supports/echoview-v4"
@@ -23,12 +25,20 @@ func main() {
 
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{Format: "${time_rfc3339} ${method} ${path} ${status} ${latency_human}\n"}))
 
+	displayLocation, err := time.LoadLocation(os.Getenv("TZ"))
+	if err != nil {
+		e.Logger.Warn("Invalid TZ; displaying host timestamps in UTC")
+		displayLocation = time.UTC
+	}
+
 	// Set Renderer with custom template functions
 	e.Renderer = echoview.New(goview.Config{
 		Root:      "views",
 		Master:    "layouts/master",
 		Extension: ".html",
 		Funcs: template.FuncMap{
+			"displayTimezone": func() string { return displayLocation.String() },
+			"displayTime":     func(t time.Time) string { return formatDisplayTime(t, displayLocation) },
 			"year": func() string {
 				return time.Now().Format("2006")
 			},
@@ -170,4 +180,8 @@ func main() {
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func formatDisplayTime(t time.Time, location *time.Location) string {
+	return t.In(location).Format("01/02/2006 15:04")
 }

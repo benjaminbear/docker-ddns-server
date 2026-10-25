@@ -47,7 +47,6 @@ def main():
         '-e', 'DDNS_ACME_DIRECTORY=https://localhost:14000/dir',
         '-e', 'LEGO_CA_CERTIFICATES=/test-root.pem',
         '-e', 'DDNS_ACME_RESOLVERS=127.0.0.1:53',
-        '-e', 'DDNS_ACME_AUTHORITATIVE_NS=127.0.0.1:53',
         '-e', 'DDNS_ALLOW_INSECURE_DOWNLOAD=true', image, env=env)
     run('docker', 'run', '-d', '--name', pebble, '--network', 'container:' + name,
         '-e', 'PEBBLE_VA_NOSLEEP=1', '-e', 'PEBBLE_AUTHZREUSE=0',
@@ -80,8 +79,12 @@ def main():
 
     def wait_cert():
         for _ in range(90):
-            status, body = request('/@/certs')
-            if 'data-pending' not in body.split('<script>')[0]:
+            status, state = request('/@/certs/status')
+            assert status == 200
+            rows = json.loads(state)
+            assert all(set(row) == {'id', 'status'} for row in rows)
+            if not any(row['status'] in ('pending', 'renewing') for row in rows):
+                status, body = request('/@/certs')
                 assert '>valid<' in body, body
                 return body
             time.sleep(1)

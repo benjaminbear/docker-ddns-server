@@ -1,7 +1,9 @@
 ---
 name: 'build go project'
 
-on: [push]
+on:
+  push:
+    branches: ["**"]
 
 jobs:
   build:

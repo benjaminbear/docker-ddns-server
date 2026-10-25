@@ -1,1018 +1,530 @@
-# Dynamic DNS Server for Docker with Web UI written in Go
+# Dynamic DNS Server for Docker
 
-![Build status](https://img.shields.io/github/actions/workflow/status/w3K-one/docker-ddns-server/BuildEmAll.yml)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/w3K-one/docker-ddns-server)
-![Go version](https://img.shields.io/github/go-mod/go-version/w3K-one/docker-ddns-server?filename=dyndns%2Fgo.mod)
+![Build](https://img.shields.io/github/actions/workflow/status/w3K-one/docker-ddns-server/BuildEmAll.yml)
+![Release](https://img.shields.io/github/v/release/w3K-one/docker-ddns-server)
+![Go](https://img.shields.io/github/go-mod/go-version/w3K-one/docker-ddns-server?filename=dyndns%2Fgo.mod)
 ![License](https://img.shields.io/github/license/w3K-one/docker-ddns-server)
 
-With docker-ddns-server you can set up your own dynamic DNS server. This project is inspired by https://github.com/dprandzioch/docker-ddns. In addition to the original version, you can setup and maintain your dyndns entries via a simple web UI with comprehensive security features, modern authentication, and threat monitoring.
+A self-hosted authoritative DNS server with a Go web interface, BIND, SQLite,
+and a DynDNS-compatible update API. Manage dynamic IPv4/IPv6 hosts, edit DNS
+records, and issue and renew certificates from one administrator interface.
+Maintained by **w3K LLC**.
 
-<p float="left">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/login.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/listhosts.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/addhost.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/listcnames.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/addcname.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/listlogs.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/security.png" width="285">
-<img src="https://raw.githubusercontent.com/w3K-one/docker-ddns-server/master/img/logout.png" width="285">
-</p>
+**Current release: v2.2.2** · [Docker Hub](https://hub.docker.com/r/w3kllc/ddns) ·
+[Releases](https://github.com/w3K-one/docker-ddns-server/releases) ·
+[Issues](https://github.com/w3K-one/docker-ddns-server/issues)
 
-## ✨ Key Features
+![Hosts with zone filtering, sortable columns and certificate actions](img/listhosts.png)
 
-- **Web-Based Management** - Compact icon navigation, left-aligned hostnames, sortable Hostname/IP/TTL/LastUpdate columns with an original-order reset and an All zones/per-zone filter, CNAME sorting by Hostname/Target/TTL with the same zone filter and reset, responsive rows and certificate actions with accessible labels and tooltips
-- **DNS Records** - A, AAAA, CNAME, TXT, MX, SRV, CAA and delegated NS RRsets
-- **Dual-Stack DDNS** - Independent IPv4 and IPv6 client updates
-- **Let’s Encrypt Certificates** - Automatic zone wildcard issuance and renewal, dedicated host certificates, and ZIP/PEM downloads
-- **Security & IP Blocking** - Automatic protection against brute-force attacks
-- **Modern Authentication** - Admin password, optional Google sign-in and passkeys with HTTPS support
-- **Security Dashboard** - Real-time monitoring of threats and blocked IPs
-- **Multi-Platform Support** - Runs on amd64, arm64, arm (Raspberry Pi compatible)
-- **Automatic Migration** - Handles legacy data with automatic normalization
-- **Reverse Proxy Ready** - Works seamlessly with nginx, Caddy, Traefik
-- **Threat Intelligence** - Comprehensive logging for attack pattern analysis
+## What it does
 
----
-
-## DNS records and certificates (v2.1.0)
-
-The **DNS records** icon opens static RRset management for A, AAAA, CNAME, TXT, MX,
-SRV, CAA and delegated NS records. Select a managed zone, use `@` for its root,
-and enter one value per line. Saving replaces that name/type's complete RRset;
-other record types are preserved. TXT is entered without surrounding quotes;
-long strings are split into DNS character strings automatically. MX uses
-`10 mail.example.net`, SRV uses `10 5 443 service.example.net` at `_service._tcp`,
-and CAA uses `0 issue letsencrypt.org`. NS records are for subzone delegation;
-apex NS and SOA remain owned by BIND setup. In-zone MX/NS targets need valid
-address/glue records before BIND accepts the delegation or mail routing.
-
-Existing DDNS addresses and host-linked CNAMEs remain on their original pages.
-Static records cannot overwrite their address/alias RRsets. Hosts can have TXT,
-MX and other non-conflicting records; deleting a host preserves those records.
-All four legacy update endpoints still accept IPv4 for A and IPv6 for AAAA.
-A dual-stack client sends one request per address family; neither erases the other.
-
-### Automatic zone certificates, dedicated host certificates
-
-Open **Certificates → Automatic certificates**, enter a contact email, choose
-RSA-2048 or EC P-256, accept the CA subscriber agreement and enable the policy.
-The app maintains **one certificate containing the apex and wildcard per managed
-zone**. A one-minute scheduler issues missing zone certificates serially and
-renews opted-in certificates within 30 days of expiry (or after two-thirds of
-their lifetime for short-lived certificates). Failed attempts back off
-from one hour to 24 hours. Removing a managed zone stops its automatic renewals.
-Disabling automatic issuance leaves existing certificates' renewal settings intact.
-Certificate automation starts disabled until that one-time setup is completed.
-
-For client infrastructure, use **Issue** on the host row or **New certificate**
-with that single hostname. Automatic renewal is selected by default. The host row
-then offers a **download icon**, containing `cert.pem`, `chain.pem`, `fullchain.pem` and
-`privkey.pem`. **Host ZIP links never fall back to zone wildcards or multi-name
-certificates**, and never select staging certificates. Wildcard ZIPs remain
-available only from the admin Certificates page for the operator's own use.
-All certificate endpoints require an authenticated admin session.
-
-The Certificates page also provides individual PEM downloads, manual renewal /
-reissue (with a fresh private key), revocation and an activity history. Failed
-renewals preserve the previous certificate/key until replacement succeeds.
-Downloads require HTTPS, are marked `no-store`, and are audited. Devices still
-need their renewed certificate/key installed separately; this release does not
-push certificates to gateways or add a public certificate download API.
-
-DNS-01 uses exact-value TXT updates, preserving unrelated TXT and concurrent
-apex/wildcard challenge values. Interrupted challenges are journaled for cleanup.
-Names must be within `DDNS_DOMAINS`; public delegation must reach this BIND server,
-and any CAA policy must permit Let's Encrypt. Authoritative NS checks normally
-use public DNS; an explicit authoritative endpoint can be configured below.
-
-### Optional configuration and key backups
-
-No new required environment variable is introduced. Certificate and account keys
-are encrypted with AES-256-GCM. On first use of this release, a separate random
-key is persisted as `/root/database/cert.key` with mode 0600, alongside the SQLite
-DB on the existing volume. **Back up the whole database volume, including
-`cert.key`**. Losing that file makes stored private keys unrecoverable. Restoring
-an existing certificate database without its key disables certificate features
-rather than silently creating a replacement key. DNS continues operating if
-certificate setup fails.
-
-| Variable | Purpose |
+| Area | Capabilities |
 |---|---|
-| `DDNS_ACME_EMAIL` | Prefills the certificate contact email |
-| `DDNS_CERT_KEY` | Optional 64-character hexadecimal encryption key instead of the persisted key file; keep stable and back it up |
-| `DDNS_ACME_DIRECTORY` | Optional fixed ACME directory override, primarily for isolated Pebble tests; overrides the staging checkbox |
-| `DDNS_ACME_AUTHORITATIVE_NS` | Optional authoritative DNS server, with optional port, for direct TXT propagation checks |
-| `DDNS_ACME_RESOLVERS` | Optional comma-separated recursive resolver endpoints for ACME DNS lookup |
-| `DDNS_TRUSTED_PROXIES` | Exact reverse-proxy IPs/CIDRs permitted to report HTTPS/client-IP headers; necessary for HTTPS downloads behind a proxy |
-| `DDNS_ALLOW_INSECURE_DOWNLOAD` | `true` only in isolated LAN tests; default false |
+| Hosts | Per-host update credentials; independent A and AAAA updates; zone filtering; sorting and reset; dedicated certificate actions |
+| DNS records | A, AAAA, CNAME, TXT, MX, SRV, CAA and delegated NS; existing aliases appear automatically; all-zone/per-zone views and sorting |
+| Certificates | Automatic wildcard + apex certificates per zone; dedicated host certificates; renewal, revocation, ZIP and individual PEM downloads |
+| Sign-in | Admin password, optional Google sign-in with an exact email allowlist, and passkeys |
+| Monitoring | Update history, failed authentication details, hostname tooltips and temporary blocking of repeated failed admin logins |
+| Deployment | Docker images for `linux/amd64`, `linux/386`, `linux/arm/v7` and `linux/arm64`; persistent SQLite and BIND volumes |
 
-Do not change `DDNS_CERT_KEY` or the persisted key file without re-encrypting the
-stored keys. The session-cookie secret is separate and does not encrypt certificates.
-For production updates use Chimera; preserve the existing database and BIND volumes.
-Do not remove the existing acme.sh jobs until their clients have migrated.
+Navigation uses icons with labels available on hover and to assistive technology.
+The original oversized logo is preserved, with consistent initial page spacing.
 
-### Verification
+## Quick start
 
-```sh
-cd dyndns && go test -race ./... && go vet ./...
-cd ..
-docker build -f deployment/Dockerfile -t ddns-features-test:local .
-python3 tests/m0_smoke.py ddns-features-test:local
-python3 tests/features_smoke.py ddns-features-test:local
+### 1. Prepare DNS and HTTPS routing
+
+Use a zone you control, such as `ddns.example.com`, and an authoritative nameserver
+such as `ns.example.com`. In the parent zone, configure delegation and the
+nameserver's reachable address:
+
+```dns
+ddns.example.com.  IN NS    ns.example.com.
+ns.example.com.    IN A     203.0.113.10
+; Add AAAA only when the authoritative endpoint is reachable over IPv6.
 ```
 
-The feature smoke test creates disposable BIND and Pebble containers, uses fixture
-credentials, and verifies actual DNS-01 issuance, EC/RSA wildcard+apex certificates,
-renewal/key rotation, revocation and downloads. It never contacts Let's Encrypt
-production. `--keep` leaves a local preview running until Enter is pressed.
+Public resolvers must be able to reach your authoritative DNS endpoint over both
+UDP and TCP port 53. DNS delegation is separate from the web interface's HTTPS
+reverse proxy. HTTP proxying alone does not provide authoritative DNS service.
+If the nameserver is inside a delegated zone, arrange the necessary glue records.
 
----
+Serve the web interface through your existing HTTPS reverse proxy. The app listens
+on port 8080 inside the container. The example below binds that HTTP port only to
+loopback for a proxy running on the same host; adapt the private connection when
+using a proxy container or another host.
+
+### 2. Create persistent credentials
+
+Generate an htpasswd entry and a random session secret:
+
+```sh
+# Prompts for the administrator password; requires Apache's htpasswd utility.
+export DDNS_ADMIN_LOGIN="$(htpasswd -nB admin)"
+export DDNS_SESSION_SECRET="$(openssl rand -base64 32)"
+```
+
+Store both values in your deployment's private environment or secret store and
+reuse them across restarts. The session secret must contain **at least 32 bytes**.
+When putting an htpasswd value directly into Compose YAML, escape each `$` as `$$`;
+when using a Compose `.env` file, single-quote the literal value. Do not commit
+credentials or `.env` files.
+
+### 3. Deploy
+
+```yaml
+services:
+  ddns:
+    image: w3kllc/ddns:v2.2.2
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "53:53/tcp"
+      - "53:53/udp"
+    environment:
+      DDNS_ADMIN_LOGIN: "${DDNS_ADMIN_LOGIN:?Set an htpasswd entry}"
+      DDNS_SESSION_SECRET: "${DDNS_SESSION_SECRET:?Set a persistent 32-byte minimum secret}"
+      DDNS_DOMAINS: "ddns.example.com"
+      DDNS_PARENT_NS: "ns.example.com"
+      DDNS_DEFAULT_TTL: "600"
+      TZ: "America/New_York"
+      DDNS_TRUSTED_PROXIES: "${DDNS_TRUSTED_PROXIES:-}"
+    volumes:
+      - bind-data:/var/cache/bind
+      - database:/root/database
+volumes:
+  bind-data:
+  database:
+```
+
+Run `docker compose up -d`, or deploy through your existing stack manager. Open
+`https://your-admin-host/@/`, sign in, and add a host. Preserve both volume mounts
+when updating an existing deployment; do not accidentally create empty replacement
+volumes under different names.
+
+The [development Compose file](deployment/docker-compose.yml) also supports local
+builds. Replace its example administrator credential before use.
+
+### Reverse proxy headers
+
+Set `DDNS_TRUSTED_PROXIES` to the exact proxy IPs/CIDRs **as seen by the app**.
+The app ignores forwarded client-IP and HTTPS headers from other peers. With
+multiple proxy hops, configure the trusted chain and have the edge sanitize
+client-supplied forwarding headers.
+
+A typical nginx HTTPS location is:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Configure TLS on the surrounding virtual host. Google/passkey authentication and
+certificate downloads require HTTPS. The DDNS API continues accepting HTTP for
+older devices; a proxy-wide HTTP-to-HTTPS redirect can prevent those devices from
+updating, so configure redirects according to your clients' capabilities.
+
+## Hosts and DDNS clients
+
+Create each dynamic host in **Hosts** with its hostname, zone, TTL, username and
+password. These are **device credentials**, separate from the administrator's
+login. Usernames may be shared between hosts; authentication also checks the
+requested hostname. Passwords remain case-sensitive.
+
+![Adding a host using demonstration data](img/addhost.png)
+
+The update API accepts the same parameters on all four routes:
+
+```text
+GET /update
+GET /nic/update
+GET /v2/update
+GET /v3/update
+```
+
+| Parameter | Meaning |
+|---|---|
+| `hostname` | Required fully qualified hostname already configured in Hosts |
+| `myip` | IPv4 or IPv6 address; omit to use the caller address |
+
+Use HTTP Basic authentication with that host's credentials. These examples prompt
+for the device password rather than including it in the command:
+
+```sh
+# IPv4: updates A only.
+curl --user device-user \
+  'https://your-admin-host/nic/update?hostname=router.ddns.example.com&myip=192.0.2.10'
+
+# IPv6: updates AAAA only.
+curl --user device-user \
+  'https://your-admin-host/nic/update?hostname=router.ddns.example.com&myip=2001:db8::10'
+```
+
+For dual-stack operation, send one request per address family. Updating A does not
+erase AAAA, and vice versa. The Hosts IP column displays the most recently updated
+address, not a complete inventory of both DNS RRsets. Send `myip` explicitly when
+a proxy cannot reliably convey the client's address family.
+
+The current implementation returns `good` for a successful update. Failure bodies
+include `badauth`, `notfqdn`, `badrequest` and `dnserr`; inspect the HTTP status and
+update logs as well. Clients should not depend on an echoed IP or a `nochg`
+response. Legacy HTTP Basic authentication remains separate from admin sessions.
+
+### Timezone and table controls
+
+Set `TZ` to an IANA zone, such as `America/New_York`; UTC is used when unset.
+Host timestamps are converted to that zone with daylight saving time support.
+Hover over the **sortable clock icon** to see the zone. Dates stay on one line,
+and `Never` identifies a host that has not updated yet. Timezone data is embedded
+in the application.
+
+Use the zone selector to restrict the list. Click Hostname, IP, TTL or the clock
+to sort; click again to reverse direction. The reset icon restores the original
+entry order without clearing the zone filter.
+
+## DNS editor, including existing CNAMEs
+
+**DNS records** manages static records and all CNAME aliases in one place.
+Existing CNAMEs appear with their current hostname, target and TTL—no recreation
+is necessary. Old `/@/cnames` bookmarks redirect to this editor. Use **All zones**
+or a specific zone, sort by hostname, target/value or TTL, and reset the ordering.
+
+![Unified DNS editor with populated CNAMEs and other records](img/records.png)
+
+A CNAME points to another **hostname**, not an IP. When a DDNS client changes that
+target's A/AAAA records, the alias resolves to the new address automatically.
+**CNAMEs are not updated through the DDNS API.**
+
+Expand **Add or replace a record set**, select a zone and type, and enter one value
+per line. Use `@` for the zone root. Saving replaces the complete set of values
+for that name/type; other compatible record types remain intact.
+
+| Type | Example value | Notes |
+|---|---|---|
+| A | `192.0.2.25` | Static IPv4 address |
+| AAAA | `2001:db8::25` | Static IPv6 address |
+| CNAME | `router.ddns.example.com` | Full target hostname; cannot coexist with other data at the same name |
+| TXT | `v=spf1 -all` | Plain text without surrounding quotes; long values are split automatically |
+| MX | `10 mail.example.net` | Preference followed by full mail-server hostname |
+| SRV | `10 5 5060 sip.example.net` | Priority, weight, port, target; use an owner such as `_sip._tcp` |
+| CAA | `0 issue letsencrypt.org` | Flags, property tag, value |
+| NS | `ns.child.example.net` | Subzone delegation; apex NS/SOA remain managed by BIND setup |
+
+![Adding a DNS record set](img/record-editor.png)
+
+Dynamic host A/AAAA records remain managed in **Hosts** and cannot be overwritten
+from the static editor. CNAME conflicts and invalid DNS values are rejected.
+MX targets cannot be CNAMEs. In-zone MX/NS targets need the appropriate address or
+glue records. ACME challenge names are reserved for certificate validation.
+
+Existing aliases are displayed directly from their stored data. When explicitly
+saved or deleted through the editor, the database and DNS update are handled
+together; a failed DNS write preserves the previous stored alias.
+
+## Certificates
+
+### Automatic zone certificates
+
+Open **Certificates → Automatic certificates**. Enter a contact email, choose
+RSA 2048 or EC P-256, enable automatic issuance, and accept the CA subscriber
+agreement. Automation is disabled until configured.
+
+The app maintains **one apex + wildcard certificate per managed zone**, for example
+`ddns.example.com` and `*.ddns.example.com`. A scheduler checks every minute, issues
+missing certificates serially, and renews opted-in certificates within 30 days of
+expiry, or after two-thirds of their lifetime for short-lived certificates.
+Failures retry with backoff from one hour to 24 hours. Removing a managed zone
+stops its automatic renewals. Disabling automatic issuance does not turn off
+renewal for existing certificates that already have it enabled.
+
+![Automatic certificate settings](img/certificate-settings.png)
+
+### Dedicated certificates for devices
+
+Use the certificate icon on a host row, or **New certificate** with a single
+hostname. Automatic renewal is selected by default. Keep zone wildcard keys for
+operator-controlled infrastructure; distribute a dedicated certificate for each
+client host.
+
+A host's download icon selects only its dedicated, non-staging, single-name
+certificate. **It never falls back to a wildcard or multi-name certificate.**
+Wildcard packages remain available on the authenticated Certificates page.
+
+![Certificate inventory and download actions](img/certificates.png)
+
+A ZIP package contains:
+
+- `cert.pem` — leaf certificate.
+- `chain.pem` — issuer chain.
+- `fullchain.pem` — leaf plus chain.
+- `privkey.pem` — private key.
+
+Individual PEM downloads, manual renewal/reissue, revocation and activity history
+are also available. Downloads require an authenticated HTTPS admin session, use
+`no-store`, and are audited. A failed renewal retains the previous certificate/key
+until a replacement succeeds. Reissue creates a fresh private key.
+
+**Renewal on the server does not install certificates on your devices.** Download
+and deploy the renewed files separately; there is no public client certificate
+API or automatic device installation in this release.
+
+### Processing and DNS validation
+
+An animated indicator appears during issuance/renewal. The page polls an
+authenticated status endpoint and reloads when the operation succeeds or fails.
+Temporary connection errors retry with backoff instead of repeatedly reloading
+the page or discarding form input.
+
+![Certificate processing indicator](img/certificate-processing.png)
+
+DNS-01 validation adds exact TXT challenge values and preserves unrelated TXT
+records and concurrent apex/wildcard challenges. Interrupted challenges are
+journaled for cleanup. The local readiness check queries BIND at `127.0.0.1:53`
+by default, avoiding public-IP hairpin/NAT reflection problems. This does not
+replace the CA's public validation: delegation must reach the authoritative
+server and any CAA policy must permit Let's Encrypt.
+
+### Certificate storage
+
+Certificate and ACME account private keys are encrypted with AES-256-GCM. A random
+32-byte encryption key is stored as `/root/database/cert.key` with mode 0600 unless
+`DDNS_CERT_KEY` is configured. **Back up the whole database volume, including that
+key file, or retain the configured encryption key.** Losing the key makes stored
+private keys unrecoverable. It is separate from the session signing secret.
 
 ## Google sign-in and passkeys
 
-Admin login supports optional **Google OpenID Connect** and **WebAuthn passkeys**.
-The existing admin password remains available for recovery, and routers continue
-using their existing per-host HTTP Basic credentials. These features do not add
-public registration or grant DDNS clients admin access.
+Password login remains available for recovery. Optional Google and passkey login
+provide admin access; they do not change device credentials or enable public
+registration.
 
-Choose one HTTPS origin for admin sign-in, for example `https://ddns.example.com`.
-Passkeys are bound to that hostname; other managed DNS zones do not get access to
-its credentials. Links from another site alias lead to the canonical sign-in
-origin. Set the exact reverse proxy addresses in `DDNS_TRUSTED_PROXIES` as usual.
+![Password, Google and passkey sign-in choices](img/login.png)
 
-| Variable | Purpose |
-|---|---|
-| `DDNS_AUTH_ORIGIN` | Canonical HTTPS origin, with no path; enables passkey enrollment/sign-in |
-| `DDNS_GOOGLE_CLIENT_ID` | Google OAuth web application's client ID |
-| `DDNS_GOOGLE_CLIENT_SECRET` | Google OAuth web application's secret; store in deployment secrets, never Git |
-| `DDNS_GOOGLE_ALLOWED_EMAILS` | Required comma-separated exact administrator emails; no wildcard or domain-wide signup |
+### Configure Google for your own deployment
 
-For Google sign-in, configure all three Google variables and register this exact
-**authorized redirect URI** on the OAuth web client:
+1. Choose one canonical HTTPS admin origin, such as `https://ddns.example.com`.
+2. In your own Google Cloud project, configure the app's branding and audience,
+   then create an OAuth client of type **Web application**. If testing, add the
+   intended administrators as Google test users too.
+3. Register this exact **authorized redirect URI**, substituting your origin:
 
-```text
-https://ddns.example.com/@/auth/google/callback
-```
+   ```text
+   https://ddns.example.com/@/auth/google/callback
+   ```
 
-Use the same origin as `DDNS_AUTH_ORIGIN`, with the real hostname substituted.
-Each deployment must use its own Google Cloud project/client credentials and
-administrator allowlist; no w3K account or OAuth credential is built into the image.
-
-To configure your own instance:
-
-1. In Google Cloud Console, select your project and open **Google Auth Platform**.
-   Configure your app's branding and audience. If the app is in testing, add your
-   intended administrators as test users; this does not replace the DDNS allowlist.
-2. Under **Clients**, create an OAuth client of type **Web application**. Add your
-   exact HTTPS callback shown above to **Authorized redirect URIs**. This server-side
-   flow does not require an authorized JavaScript origin.
-3. Store the client ID and secret privately in your deployment environment. Set
-   the variables below, replacing every example with your own values. Keep the
-   existing admin password, persistent session secret and volumes.
+4. Configure your own client credentials and exact administrator email allowlist:
 
    ```yaml
    environment:
      DDNS_AUTH_ORIGIN: "https://ddns.example.com"
      DDNS_GOOGLE_CLIENT_ID: "${DDNS_GOOGLE_CLIENT_ID:?Set your Google web client ID}"
-     DDNS_GOOGLE_CLIENT_SECRET: "${DDNS_GOOGLE_CLIENT_SECRET:?Set your Google client secret}"
+     DDNS_GOOGLE_CLIENT_SECRET: "${DDNS_GOOGLE_CLIENT_SECRET:?Set your client secret}"
      DDNS_GOOGLE_ALLOWED_EMAILS: "owner@example.com"
    ```
 
-4. Redeploy, open the canonical login page and choose **Sign in with Google**.
-   Verify the allowed account can sign in before relying on it for recovery.
-   Additional administrators can be explicitly comma-separated in the allowlist;
-   every allowed identity has full administrator access to this single-admin app.
-5. Enroll your own passkey using the steps below. For passkeys without Google,
-   set only `DDNS_AUTH_ORIGIN` and enroll after signing in with the admin password.
-
-Email matching is case-insensitive. An address on another installation's allowlist
-does not grant access to yours. Never publish client secrets in Compose files,
-screenshots or repository history.
-
-Only `openid` and `email` scopes are requested. Google email must be verified and
-explicitly allowed. The first successful sign-in pins its stable Google subject;
-a new Google account taking over the same email is rejected. The allowlist is
-checked on every admin request, so removing an email also revokes its existing
-Google sessions and any passkeys enrolled through that identity. To deliberately
-replace an account, back up the database and have an operator remove that email's
-row from `google_identities` before signing in with the replacement account.
-
-To enroll a passkey:
-
-1. Sign in on the canonical HTTPS origin with your password or Google account.
-2. Open **Security → Manage passkeys** within five minutes of signing in.
-3. Give the passkey a recognizable name and choose **Add passkey**.
-4. Complete your device's fingerprint, face, PIN or security-key prompt yourself.
-
-Use **Sign in with a passkey** on subsequent visits. Enrollment requires a
-resident credential and user verification. A passkey can be removed from the same
-page after a fresh sign-in; removing it invalidates sessions created with it.
-This revokes access on the server; remove its saved entry from your authenticator separately if desired.
-Back up the database volume: it contains the random user handle, public credential
-records, Google identity pins and revocation state. Passkey private keys never
-leave the authenticator. Synced passkeys are supported; keep a recovery sign-in
-method available before replacing devices.
-
-The short-lived OAuth/WebAuthn challenges are browser-bound, stored only in
-server memory and consumed once; restarting the app requires restarting any
-unfinished sign-in. OAuth uses PKCE, state and nonce validation; admin session
-cookies remain Secure on HTTPS, HttpOnly and SameSite=Strict. Only the temporary
-OAuth flow cookie uses SameSite=Lax for the Google callback. Access logs omit query
-strings so authorization codes and state values are not written to container logs.
-
-With no auth variables set, the existing deployment behavior is unchanged.
-Partial/invalid Google configuration fails startup instead of granting open
-access. `DDNS_ADMIN_LOGIN` and `DDNS_SESSION_SECRET` remain required when these
-additional sign-in methods are enabled. This release upgrades the build to Go 1.27
-for the maintained WebAuthn library.
-
-References: [Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect)
-and [go-webauthn](https://github.com/go-webauthn/webauthn).
-
----
-
-## 📦 Installation
-
-You can either use the pre-built Docker image or build it yourself.
-
-### Using the Docker Image
-
-Docker Hub: https://hub.docker.com/r/w3kllc/ddns
-
-Generate a persistent secret first and store it securely for future deployments:
-
-```bash
-export DDNS_SESSION_SECRET="$(openssl rand -base64 32)"
-```
-
-**Quick Start:**
-```bash
-docker run -it -d \
-    -p 8080:8080 \
-    -p 53:53 \
-    -p 53:53/udp \
-    -v /somefolder:/var/cache/bind \
-    -v /someotherfolder:/root/database \
-    -e 'DDNS_ADMIN_LOGIN=admin:$2y$05$...' \
-    -e DDNS_DOMAINS=dyndns.example.com \
-    -e DDNS_PARENT_NS=ns.example.com \
-    -e DDNS_DEFAULT_TTL=3600 \
-    -e DDNS_SESSION_SECRET="$DDNS_SESSION_SECRET" \
-    --name=dyndns \
-    w3kllc/ddns:latest
-```
-
-### Using docker-compose (Recommended)
-
-For a complete setup example, see: [docker-compose.yml](https://github.com/w3K-one/docker-ddns-server/blob/master/deployment/docker-compose.yml)
-
-**Example docker-compose.yml:**
-```yaml
-version: '3.8'
-
-services:
-  ddns:
-    image: w3kllc/ddns:latest
-    container_name: dyndns
-    ports:
-      - "8080:8080"
-      - "53:53"
-      - "53:53/udp"
-    volumes:
-      - ./bind:/var/cache/bind
-      - ./database:/root/database
-      - ./static:/app/static  # Optional: for custom logo
-    environment:
-      # Required
-      - DDNS_ADMIN_LOGIN=admin:$$2y$$05$$hashed_password_here
-      - DDNS_DOMAINS=dyndns.example.com
-      - DDNS_PARENT_NS=ns.example.com
-      - DDNS_DEFAULT_TTL=3600
-      
-      # Required session signing secret
-      - DDNS_SESSION_SECRET=${DDNS_SESSION_SECRET:?Set a persistent secret of at least 32 bytes}
-      
-      # Optional
-      - DDNS_TITLE=My DynDNS Server
-      - DDNS_CLEAR_LOG_INTERVAL=30
-      - DDNS_ALLOW_WILDCARD=true
-      - DDNS_LOGOUT_URL=https://example.com
-      - DDNS_POWERED_BY=ACME Inc
-      - DDNS_POWERED_BY_URL=https://acme.inc
-    restart: unless-stopped
-```
-
----
-
-## ⚙️ Configuration
+5. Preserve `DDNS_ADMIN_LOGIN`, `DDNS_SESSION_SECRET` and both data volumes,
+   redeploy, then test **Sign in with Google** at the canonical origin.
+
+No w3K Google account or OAuth credential is embedded in the image. Every operator
+supplies their own credentials and allowlist. Email matching is case-insensitive;
+comma-separated additional emails grant full administrator access. Wildcard and
+domain-wide signup are not supported. Only `openid` and `email` scopes are used,
+and Google must report the email as verified.
+
+The first successful login pins the Google account's stable subject. A different
+account taking over the same email is rejected. Removing an allowed email revokes
+its existing Google sessions and passkeys enrolled through that identity. Planned
+account replacement requires a database backup and deliberate removal of that
+email's entry from `google_identities` before enrolling the replacement.
+
+### Enroll and manage passkeys
+
+Set `DDNS_AUTH_ORIGIN` to enable passkeys; Google is optional. Sign in with the
+admin password or Google, then open **Security → Manage passkeys** within five
+minutes. Give the credential a name, choose **Add passkey**, and complete the
+authenticator's fingerprint, face, PIN or security-key prompt.
+
+![Passkey management with illustrative enrolled-device entries](img/passkeys.png)
+
+Use **Sign in with a passkey** on later visits. Passkeys are bound to the canonical
+hostname and require user verification. Removing a passkey requires a fresh login
+and invalidates sessions created with that credential. Remove its saved entry
+from the authenticator separately if desired. Private passkey material stays on
+the authenticator; the app stores public credential and identity metadata.
+
+Google/WebAuthn login challenges are browser-bound, single-use and short-lived.
+Restarting the app interrupts unfinished sign-ins. Invalid or partial Google
+configuration fails startup. Keep a recovery sign-in method available.
+
+## Logs and security
+
+**Update logs** show the hostname, submitted IP, caller IP, user agent and outcome
+of device updates. The per-host log action narrows the history to one host.
+
+![Update history using documentation addresses](img/listlogs.png)
+
+**Security** shows recent failed authentications and active IP blocks. Hover over
+an IP to see the hostname requested by a failed DDNS update. Keyboard focus also
+reveals that tooltip. Older entries without captured or recovered hostname data
+show `Hostname not recorded`.
+
+![Security dashboard and recent blocks](img/security.png)
+
+Only failed **admin-panel** logins count toward automatic blocking: three failures
+within 72 hours trigger a seven-day block. Failed DDNS API authentication is logged
+but does not trigger those blocks. Expired blocks and old failed-auth records are
+cleaned up; failed-auth retention is 30 days. `DDNS_CLEAR_LOG_INTERVAL` controls
+the separate update-log cleanup interval.
+
+Attempted passwords are intentionally retained for security analysis and hidden
+in the interface until revealed. The log database and its backups therefore
+contain sensitive data. Container access logs omit URL query strings; nginx or
+other upstream access logs may retain them independently.
+
+<details>
+<summary>Full failed-attempt and blocked-IP views</summary>
+
+![Failed authentications with requested-hostname tooltip](img/failed-auths.png)
+![Blocked-IP management](img/blocked-ips.png)
+
+</details>
+
+## Configuration reference
+
+| Variable | Purpose / default |
+|---|---|
+| `DDNS_DOMAINS` | Required comma-separated managed zones |
+| `DDNS_PARENT_NS` | Required authoritative nameserver hostname used by BIND setup |
+| `DDNS_DEFAULT_TTL` | Required initial zone TTL in seconds |
+| `DDNS_ADMIN_LOGIN` | htpasswd entry for the admin login; required for normal authenticated operation |
+| `DDNS_SESSION_SECRET` | Required persistent signing secret, at least 32 bytes |
+| `DDNS_TRUSTED_PROXIES` | Trusted proxy IPs/CIDRs; forwarded headers are otherwise ignored |
+| `TZ` | Display timezone; e.g. `America/New_York`, UTC when unset |
+| `DDNS_TITLE` | Browser title / fallback branding; defaults to `w3K DynDNS` |
+| `DDNS_ALLOW_WILDCARD` | Enable wildcard behavior for dynamic hosts; default false |
+| `DDNS_CLEAR_LOG_INTERVAL` | Days of update-log retention; omitted/zero disables that periodic cleanup |
+| `DDNS_LOGOUT_URL` | Optional post-logout destination |
+| `DDNS_POWERED_BY` | Footer name; defaults to `w3K LLC` |
+| `DDNS_POWERED_BY_URL` | Footer link; defaults to `https://w3K.one/` |
+| `DDNS_AUTH_ORIGIN` | Canonical HTTPS origin for Google/passkeys, without a path |
+| `DDNS_GOOGLE_CLIENT_ID` | Your Google OAuth web client ID |
+| `DDNS_GOOGLE_CLIENT_SECRET` | Your Google OAuth client secret |
+| `DDNS_GOOGLE_ALLOWED_EMAILS` | Required exact email allowlist when Google is configured |
+| `DDNS_ACME_EMAIL` | Prefills certificate contact email |
+| `DDNS_CERT_KEY` | Optional stable 64-character hex encryption key instead of `cert.key` |
+| `DDNS_ACME_AUTHORITATIVE_NS` | Direct TXT readiness-check endpoint; defaults to `127.0.0.1:53` |
+| `DDNS_ACME_RESOLVERS` | Optional comma-separated recursive resolver endpoints |
+| `DDNS_ACME_DIRECTORY` | Fixed ACME directory override for isolated tests; overrides staging selection |
+| `DDNS_ALLOW_INSECURE_DOWNLOAD` | Isolated HTTP tests only; default false |
+
+Omitting `DDNS_ADMIN_LOGIN` retains a legacy unauthenticated mode for some old
+admin routes. The DNS/certificate features and additional sign-in methods require
+configured admin authentication. Use the authenticated setup above.
+
+### Custom logo
+
+The app checks `static/icons/logo.png`, then `.webp`, then `.svg` relative to its
+working directory. In the image, that directory is **`/root/static/icons`**.
+For example, replace the bundled PNG without hiding the rest of the static assets:
 
-### Environment Variables
-
-#### Required Variables
-
-**`DDNS_ADMIN_LOGIN`**  
-Admin credentials in htpasswd format for web UI access.
-
-Generate with:
-```bash
-htpasswd -nb username password
-```
-
-For docker-compose.yml (escape dollar signs):
-```bash
-echo $(htpasswd -nb username password) | sed -e s/\\$/\\$\\$/g
-```
-
-If not set, all `/@/` routes are accessible without authentication (useful with auth proxy).
-
-**`DDNS_DOMAINS`**  
-Comma-separated list of domains managed by the server.  
-Example: `dyndns.example.com,dyndns.example.org`
-
-**`DDNS_PARENT_NS`**  
-Parent nameserver of your domain.  
-Example: `ns.example.com`
-
-**`DDNS_DEFAULT_TTL`**  
-Default TTL (Time To Live) for DNS records in seconds.  
-Example: `3600` (1 hour)
-
-#### Required Session Secret
-
-**`DDNS_SESSION_SECRET`**  
-Persistent secret for signing session cookies. **At least 32 bytes are required**; startup fails if it is missing or too short.
-
-Generate with:
-```bash
-# Linux/Mac
-openssl rand -base64 32
-
-# Or using Python
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-Keep the same value across container restarts. Changing it invalidates existing sessions. This is separate from the certificate encryption key.
-
-#### Optional Variables
-
-**`DDNS_TITLE`**  
-Custom site title displayed in the web UI.  
-Default: `"w3K DynDNS"`
-
-**`DDNS_CLEAR_LOG_INTERVAL`**  
-Automatically clear log entries older than specified days.  
-Example: `30` (keep 30 days of logs)
-
-**`DDNS_ALLOW_WILDCARD`**  
-Enable wildcard DNS resolution (e.g., `*.subdomain.dyndns.example.com`).  
-Values: `true` or `false`
-
-**`DDNS_LOGOUT_URL`**  
-Redirect to this URL after logout.  
-Example: `https://example.com`
-
-**`DDNS_POWERED_BY`**  
-Show this in the footer credits.  
-Example: `ACME Inc`
-
-**`DDNS_POWERED_BY_URL`**  
-The URL to _ACME Inc_.  
-Example: `https:/acme.inc`
-
----
-
-## 🌐 DNS Setup
-
-If your parent domain is `example.com` and you want your DynDNS domain to be `dyndns.example.com`, your DynDNS hosts would be like `blog.dyndns.example.com`.
-
-Add these entries to your parent DNS server:
-
-```
-dyndns                   IN NS      ns
-ns                       IN A       <IPv4 address of your DynDNS server>
-ns                       IN AAAA    <IPv6 address of your DynDNS server> (optional)
-```
-
-**Example:**
-```
-dyndns                   IN NS      ns
-ns                       IN A       203.0.113.10
-ns                       IN AAAA    2001:db8::10
-```
-
----
-
-## 🔐 Security Features
-
-### IP Blocking & Threat Protection
-
-- **Automatic IP Blocking**: IPs are blocked after 3 failed authentication attempts within 72 hours
-- **7-Day Block Duration**: Blocked IPs are automatically unblocked after 7 days
-- **Failed Authentication Logging**: Comprehensive logs including IP, timestamp, username, and password
-- **Threat Intelligence**: Analyze attack patterns and password attempts
-- **Manual Unblock**: Security dashboard allows manual IP unblocking
-- **Automatic Cleanup**: Expired blocks and old logs are cleaned up automatically
-
-### Session-Based Authentication
-
-- **Modern Login Page**: No browser popup dialogs
-- **Secure Sessions**: HttpOnly, Secure, and SameSite cookie attributes
-- **Remember Me**: Optional 30-day session duration
-- **Proper Logout**: Destroys sessions completely
-- **HTTPS Enforcement**: Automatic redirect to HTTPS when available
-- **Reverse Proxy Support**: Detects SSL via headers from explicitly trusted proxies
-
-### Security Dashboard
-
-Access the security dashboard at `/@/security` to:
-- Monitor blocked IPs and active threats
-- Review failed authentication attempts
-- Analyze password patterns in attack attempts
-- Manually unblock IP addresses
-- View statistics and historical data
-
-**Password Logging Rationale:**  
-This is a single-user system where the admin is the only legitimate user. All other login attempts are malicious by definition. Password logging enables threat intelligence analysis to determine if attackers are getting close to your actual password. Ensure your database volume is properly secured.
-
----
-
-## 🖥️ Admin Panel Access
-
-The admin panel is accessible at `/@/` (not `/admin/` - more unique, less common).
-
-### Main Features
-
-- 🏠 **Dashboard** (`/@/`) - Overview and quick access
-- 📝 **Hosts** (`/@/hosts`) - Manage DNS hosts with automatic lowercase migration
-- 🔗 **CNAMEs** (`/@/cnames`) - Manage CNAME records
-- **DNS records** (`/@/records`) - Manage static RRsets
-- **Certificates** (`/@/certs`) - Configure automatic issuance, issue host certificates, and download packages
-- 📊 **Logs** (`/@/logs`) - View update history
-- 🔒 **Security** (`/@/security`) - Monitor threats and blocked IPs
-- ⏏️ **Logout** (`/@/logout`) - End session securely
-
-### Authentication Flow
-
-1. Navigate to `/@/` (or any admin route)
-2. Redirected to `/@/login` if not authenticated
-3. Enter admin credentials
-4. Optionally check "Remember Me" for 30-day session
-5. Access admin panel
-6. Click logout icon (⏏️) when done
-
-**HTTPS Detection:**  
-If running behind a reverse proxy with SSL, the system automatically detects HTTPS and enforces it for the admin panel while keeping API endpoints accessible via HTTP for device compatibility.
-
----
-
-## 🔄 Updating DNS Entries
-
-After adding a host via the web UI, configure your router or device to update its IP address.
-
-### Update URLs
-
-The server accepts updates on multiple endpoints:
-- `/update`
-- `/nic/update`
-- `/v2/update`
-- `/v3/update`
-
-### With IP Address Specified
-
-```
-http://dyndns.example.com:8080/update?hostname=blog.dyndns.example.com&myip=1.2.3.4
-```
-
-Or with authentication in URL:
-```
-http://username:password@dyndns.example.com:8080/update?hostname=blog.dyndns.example.com&myip=1.2.3.4
-```
-
-### IPv6 and Dual-Stack Updates
-
-Send an IPv6 address in `myip` to update AAAA:
-
-```bash
-curl -u username:password \
-  "https://dyndns.example.com/nic/update?hostname=blog.dyndns.example.com&myip=2001:db8::10"
-```
-
-For dual-stack hosts, send a separate request with the IPv4 address to update A.
-Each request changes only its own address family. All four update endpoints
-support both families; no separate AAAA endpoint is needed.
-
-### Without IP Address (Auto-detect)
-
-If your router/device doesn't support sending the IP address (e.g., OpenWRT), omit the `myip` parameter:
-
-```
-http://dyndns.example.com:8080/update?hostname=blog.dyndns.example.com
-```
-
-Or with authentication:
-```
-http://username:password@dyndns.example.com:8080/update?hostname=blog.dyndns.example.com
-```
-
-The server automatically uses the client address from the request. Forwarded client addresses are accepted only from configured `DDNS_TRUSTED_PROXIES`; otherwise the immediate peer address is used. Send `myip` explicitly when a proxy cannot reliably convey the client’s address family.
-
-### Authentication
-
-API endpoints use **HTTP Basic Authentication** with the username and password you set for each host in the web UI (not the admin credentials).
-
-**Important:** 
-- **Admin credentials** (`DDNS_ADMIN_LOGIN`) - For web UI access at `/@/`
-- **Host credentials** - For API updates, set per-host in the web UI
-
----
-
-## 🎨 UI/UX Features
-
-### Automatic Logo Detection
-
-Place a logo file in the static directory to automatically display it:
-
-**Supported formats:**
-- `static/icons/logo.png`
-- `static/icons/logo.webp`
-- `static/icons/logo.svg`
-
-If no logo is found, the system displays the text title (`DDNS_TITLE`).
-
-**Docker volume mount for custom logo:**
 ```yaml
 volumes:
-  - ./static:/app/static
+  - ./logo.png:/root/static/icons/logo.png:ro
 ```
 
-Then place your logo at: `./static/icons/logo.png`
-
-### Visual Improvements
-
-- **Sticky Header**: Navigation remains visible while scrolling
-- **Unicode Icons**: 🏠 Dashboard, 🔒 Security, ⏏️ Logout (with tooltips)
-- **Modern Design**: Clean, professional interface
-- **HTTPS Indicator**: Visual confirmation of secure connection on login page
-- **Password Controls**: Hide/reveal functionality with confirmation prompts
-- **Responsive Layout**: Works on desktop, tablet, and mobile
-
----
-
-## 🔧 Data Management
-
-### Automatic Hostname Normalization
-
-All usernames and hostnames are automatically converted to lowercase to prevent case-sensitivity issues:
-- Database storage is always lowercase
-- Lookups are case-insensitive
-- Prevents duplicate entries with different cases
-
-### Legacy Data Migration
-
-When accessing `/@/hosts` for the first time, the system automatically migrates any uppercase entries:
-- Converts hostnames to lowercase
-- Handles conflicts by appending numbers (e.g., `host-1`, `host-2`)
-- Displays migration report in the UI
-- One-time process, status persisted in database
-- Non-destructive, preserves all host data
-
-### Username Flexibility
-
-- **Non-Unique Usernames**: Multiple hosts can share the same username
-- Enables flexible credential management strategies
-- Each host can have the same or different password
-
-### Validation Rules
-
-- **Hostnames**: Minimum 1 character (allows single-letter subdomains)
-- **Usernames**: Minimum 1 character
-- **Passwords**: Minimum 6 characters
-
----
-
-## 🔀 Reverse Proxy Configuration
-
-The application intelligently detects HTTPS availability and adjusts behavior accordingly.
-
-### HTTPS Detection Methods
-
-Set `DDNS_TRUSTED_PROXIES` to the exact IPs/CIDRs of your reverse proxies as seen
-by the container. Forwarded headers are ignored from other peers. Certificate
-downloads require HTTPS even when other admin pages allow HTTP fallback.
-
-
-1. Direct TLS connection (`request.TLS`)
-2. `X-Forwarded-Proto` header
-3. `X-Forwarded-Ssl` header
-4. `X-Url-Scheme` header
-
-### Behavior
-
-**Admin Panel (`/@/*`):**
-- Auto-redirects to HTTPS when available
-- Graceful HTTP fallback if HTTPS unavailable
-- Session cookies use Secure flag with HTTPS
-
-**API Endpoints (`/update`, `/nic/update`, etc.):**
-- Always accept HTTP connections
-- No forced HTTPS redirect (device compatibility)
-- Works with devices that don't support HTTPS
-
-### Example Nginx Configuration
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name dyndns.example.com;
-
-    ssl_certificate /path/to/fullchain.pem;
-    ssl_certificate_key /path/to/privkey.pem;
-
-    # Recommended SSL settings
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
-
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-
-# Optional: HTTP to HTTPS redirect
-server {
-    listen 80;
-    server_name dyndns.example.com;
-    return 301 https://$server_name$request_uri;
-}
-```
-
-### Example Caddy Configuration
-
-```
-dyndns.example.com {
-    reverse_proxy localhost:8080
-}
-```
-
-Caddy automatically handles SSL certificates and sets appropriate headers.
-
----
-
-## 🐳 Multi-Platform Docker Support
-
-### Automated Builds
-
-Docker images are automatically built via GitHub Actions for multiple platforms:
-
-**Supported Platforms:**
-- `linux/amd64` - Intel/AMD 64-bit (standard servers, PCs)
-- `linux/386` - Intel/AMD 32-bit (older systems)
-- `linux/arm/v7` - ARM 32-bit (Raspberry Pi 2/3, older ARM devices)
-- `linux/arm64` - ARM 64-bit (Raspberry Pi 4+, modern ARM servers)
-
-### Version Tags
-
-Docker images are tagged using semantic versioning:
-
-**`:latest`** - Always points to the most recent stable build
-
-**`:vX.Y.Z`** - Semantic version tags (e.g., `:v1.2.3`)
-- Version from commit message (if commit starts with `vX.Y.Z`)
-- OR auto-incremented from last git tag
-- OR date-based tag if no version tags exist
-
-**Example:**
-```bash
-# Pull latest version
-docker pull w3kllc/ddns:latest
-
-# Pull specific version
-docker pull w3kllc/ddns:v1.2.3
-
-# Pull specific platform
-docker pull --platform linux/arm64 w3kllc/ddns:latest
-```
-
-### Versioning Strategy
-
-The build system automatically determines version tags using this priority order:
-
-1. **Commit Message Version** (Highest Priority): If your commit message title starts with `vX.Y.Z` (e.g., `v1.2.3`), that exact version is used
-2. **Auto-Increment from Last Tag**: If no version in commit message, finds the latest git tag and increments the patch version (e.g., `v1.2.3` → `v1.2.4`)
-3. **Date-Based Fallback**: If no git tags exist at all, uses timestamp format `vYY.MM.DD-HHMM` (e.g., `v25.10.11-1430`)
-
-**Example commit messages:**
-```bash
-# Explicit version (workflow extracts "v1.3.0" from start of commit message)
-git commit -m "v1.3.0 Add new security features"
-
-# Auto-increment (no version found, so increments last tag: v1.2.3 → v1.2.4)
-git commit -m "Fix bug in authentication"
-
-# Date-based (no tags exist yet, uses timestamp: v25.10.11-1430)
-git commit -m "Initial release"
-```
-
-**How version extraction works:**
-- Workflow searches for pattern `vX.Y.Z` or `vX.Y` at the **start** of commit message
-- Must begin with `v` followed by numbers and dots
-- Examples that work: `v1.0.0`, `v2.1.3`, `v1.2`
-- Examples that won't work: `version 1.0.0` (missing `v`), `Release v1.0.0` (doesn't start with `v`)
-
-### GitHub Releases
-
-Each build automatically creates a GitHub release with:
-- Version tag
-- Docker image reference
-- Commit message as release notes
-- Source code archives (zip and tar.gz)
-
----
-
-## 🚀 Migration from Original Project
-
-If migrating from `dprandzioch/docker-ddns` or older versions of this fork:
-
-### Before Migration
-
-1. **Backup your data:**
-   ```bash
-   docker cp dyndns:/root/database ./backup-database
-   docker cp dyndns:/var/cache/bind ./backup-bind
-   ```
-
-2. **Note your current configuration** (environment variables)
-
-### Breaking Changes
-
-1. **Admin Panel URL**: Changed from `/admin` to `/@/`
-   - Update bookmarks and links
-   - Use `/@/login` for login page
-
-2. **Authentication Method**: Admin panel now uses sessions
-   - Add `DDNS_SESSION_SECRET` environment variable
-   - Login via web form instead of browser popup
-
-3. **Required Variable**: `DDNS_SESSION_SECRET`
-   - Required at startup, with at least 32 bytes; preserve it across restarts
-   - Generate: `openssl rand -base64 32`
-
-### Migration Steps
-
-1. **Update docker-compose.yml** or docker command with new variables
-2. **Add `DDNS_SESSION_SECRET`** to environment
-3. **Update bookmarks** from `/admin` to `/@/`
-4. **Restart container** with new configuration
-5. **Visit `/@/hosts`** to trigger automatic data migration
-6. **Review security dashboard** for any blocked IPs
-
-### Backward Compatibility
-
-✅ **Fully Compatible:**
-- DynDNS API endpoints unchanged
-- HTTP Basic Auth still works for device updates
-- Existing host configurations work without changes
-- Database schema additions are non-breaking
-- All original functionality preserved
-
-⚠️ **Manual Update Required:**
-- Bookmark/link updates for admin panel
-- Addition of a persistent session secret (required)
-
----
-
-## 🔍 Troubleshooting
-
-### Login Issues
-
-**Problem:** Login redirects back to login page  
-**Solution:** Preserve `DDNS_SESSION_SECRET` across restarts and verify proxy HTTPS detection.
-
-**Problem:** Container exits with `DDNS_SESSION_SECRET must contain at least 32 bytes`
-**Solution:** Generate a secret with `openssl rand -base64 32`, store it in your deployment environment, and recreate the container with that persistent value.
-
-**Problem:** Can't remember admin password  
-**Solution:** Regenerate password with `htpasswd -nb username newpassword` and update `DDNS_ADMIN_LOGIN`
-
-### HTTPS Issues
-
-**Problem:** HTTPS redirect loop  
-**Solution:** Verify the reverse proxy sends `X-Forwarded-Proto: https` and its source IP is listed in `DDNS_TRUSTED_PROXIES`
-
-**Problem:** "Not Secure" warning  
-**Solution:** Check SSL certificate configuration in your reverse proxy
-
-### IP Blocking
-
-**Problem:** Locked out after failed login attempts  
-**Solution:** 
-- Wait 7 days for automatic unblock
-- OR manually remove from `blocked_ips` table in database
-- OR access database with SQLite: `DELETE FROM blocked_ips WHERE ip_address='YOUR_IP';`
-
-### API Updates
-
-**Problem:** Device updates not working  
-**Solution:** 
-- API uses host credentials (from web UI), not admin credentials
-- Check username/password for specific host in `/@/hosts`
-- Verify device is sending correct Basic Auth headers
-
-**Problem:** "nochg" response from server  
-**Solution:** IP address hasn't changed, this is normal behavior
-
-### Build Issues
-
-**Problem:** `missing go.sum entry for gorilla/sessions`  
-**Solution:** 
-```bash
-go get github.com/gorilla/sessions@v1.2.2
-go mod tidy
-```
-
-### Database Issues
-
-**Problem:** Database locked errors  
-**Solution:** Ensure only one container instance is running
-
-**Problem:** Lost all data after update  
-**Solution:** Check volume mounts are correct in docker-compose.yml
-
----
-
-## 🛡️ Security Best Practices
-
-1. **Always Set Session Secret**  
-   Generate a strong random secret: `openssl rand -base64 32`
-
-2. **Use HTTPS with Reverse Proxy**  
-   Never expose the admin panel over plain HTTP in production
-
-3. **Secure Database Volume**  
-   Set appropriate file permissions:
-   ```bash
-   chmod 700 /path/to/database
-   ```
-
-4. **Regular Updates**  
-   Keep Docker image updated: `docker pull w3kllc/ddns:latest`
-
-5. **Monitor Security Dashboard**  
-   Check `/@/security` regularly for attack patterns
-
-6. **Strong Admin Password**  
-   Use a password manager to generate and store strong credentials
-
-7. **Separate Credentials**  
-   Use different passwords for admin and each host
-
-8. **Firewall Configuration**  
-   Limit access to web UI (port 8080) to trusted networks if possible
-
-9. **Database Backups**  
-   Regularly backup the database volume
-
-10. **Password Logging Awareness**  
-    Remember that failed auth logs include passwords - secure your database
-
----
-
-## 📚 API Reference
-
-### Update Endpoints
-
-All endpoints accept the same parameters:
-
-**Endpoints:**
-- `GET /update`
-- `GET /nic/update`
-- `GET /v2/update`
-- `GET /v3/update`
-
-**Parameters:**
-- `hostname` (required) - Fully qualified domain name to update
-- `myip` (optional) - IP address to set (auto-detected if omitted)
-
-**Authentication:**
-- HTTP Basic Auth using host credentials (username/password from web UI)
-
-**Response Codes:**
-- `good <IP>` - Update successful
-- `nochg <IP>` - IP address hasn't changed
-- `badauth` - Authentication failed
-- `notfqdn` - Hostname is not a valid FQDN
-- `nohost` - Hostname doesn't exist
-- `abuse` - IP address has been blocked
-
-**Example:**
-```bash
-curl -u username:password \
-  "http://dyndns.example.com:8080/update?hostname=test.dyndns.example.com&myip=1.2.3.4"
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Whether it's bug fixes, new features, documentation improvements, or reporting issues.
-
-### How to Contribute
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes**
-4. **Test thoroughly**
-5. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-6. **Push to your fork** (`git push origin feature/amazing-feature`)
-7. **Open a Pull Request**
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/w3K-one/docker-ddns-server.git
-cd docker-ddns-server
-
-# Build the application
+Without a detected logo, the interface shows `DDNS_TITLE`.
+
+## Backups, upgrades and recovery
+
+Preserve the BIND volume (`/var/cache/bind`), database volume (`/root/database`),
+deployment configuration, session secret and any configured certificate encryption
+key. The database includes hosts, aliases, records, logs, certificate/account
+material, passkey public credentials and Google identity pins.
+
+Take a consistent database backup: either use SQLite's backup API or stop the
+application through its deployment manager before copying the whole volume.
+Copying only a live `ddns.db` can miss writes still in its WAL. Include `cert.key`
+in the same backup set, and retain the BIND zone files and journals.
+
+For upgrades, re-pull the desired image and recreate the service through the same
+manager that owns the stack. Keep volume names and mounts unchanged. If a tag has
+been republished, a restart alone does not pull the replacement image.
+
+Older installations need a persistent `DDNS_SESSION_SECRET`. The admin interface
+is `/@/`, with `/@/login` for sign-in. Device update URLs and per-host Basic Auth
+remain compatible. Schema additions and legacy normalization run automatically;
+existing CNAMEs appear in the unified editor.
+
+## Troubleshooting
+
+| Symptom | Check |
+|---|---|
+| Startup says session secret must contain at least 32 bytes | Supply a persistent random `DDNS_SESSION_SECRET` and recreate the service |
+| Login loops or HTTPS downloads fail behind a proxy | Verify the proxy's actual source address is trusted and its HTTPS headers are correct |
+| Google rejects the callback | Match the canonical origin and exact `/@/auth/google/callback` URI; check the client credentials, audience/test users and local email allowlist |
+| Passkey enrollment/removal is rejected | Use the canonical HTTPS host and sign in again within the last five minutes |
+| Device returns `badauth` | Use the host's credentials, not the admin login; verify the exact hostname |
+| Detected IP is a proxy address | Fix the trusted forwarding chain or send `myip` explicitly |
+| Certificate issuance fails | Check the displayed error, public delegation, UDP/TCP 53 reachability, CAA, local BIND readiness and container logs |
+| Certificates unavailable after restore | Restore the matching `cert.key` or configured `DDNS_CERT_KEY`; do not generate a replacement for encrypted existing data |
+| Data missing after upgrade | Verify the original database/BIND volumes are mounted |
+| Database locked | Verify a single app instance owns the SQLite database |
+| Old page styling after a same-version update | Confirm the replacement image was pulled and refresh the browser cache |
+
+## Development and verification
+
+```sh
 cd dyndns
-go build
-
-# Run tests (if available)
-go test ./...
-
-# Build Docker image locally
+go build ./...
+go test -race ./...
+go vet ./...
 cd ..
-docker build -t ddns:dev -f deployment/Dockerfile .
+node --test tests/certificates_poll_test.js
+docker build -f deployment/Dockerfile -t ddns-test:local .
+python3 tests/m0_smoke.py ddns-test:local
+python3 tests/features_smoke.py ddns-test:local
 ```
 
-### Code Style
+The feature smoke test uses disposable BIND and Pebble containers to verify real
+DNS-01 challenges, certificate issuance, renewal/key rotation, revocation and
+downloads. Use Pebble or the CA staging environment for tests, never Let's Encrypt
+production. The Go toolchain version is declared in [go.mod](dyndns/go.mod) and
+the [Dockerfile](deployment/Dockerfile).
 
-- Follow Go conventions and best practices
-- Use `gofmt` for code formatting
-- Add comments for complex logic
-- Write meaningful commit messages
+The [image workflow](.github/workflows/BuildEmAll.yml) builds all four supported
+platforms and publishes `latest` and the release tag. It is the only image publisher;
+separate Go build/test checks run on branch pushes, without duplicate tag runs.
+A commit title beginning with
+`vX.Y.Z` selects that version. `v2.2.2` consolidates the certificate readiness/polling,
+failed-hostname tooltips, compact timezone heading, aligned layout and unified
+CNAME editor changes into one release commit.
 
----
+### Documentation screenshots
 
-## 📄 License
+All screenshots use disposable demonstration data: fictional hosts and accounts,
+IPv4 documentation ranges and `2001:db8::/32` IPv6 addresses. The zone names
+`ddns.ws` and `dvr.bz` are retained for illustration. Certificate and passkey states
+are seeded examples; screenshots do not show customer data or live credentials.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+To reproduce the preview, build the current image and run:
 
----
+```sh
+# Requires Docker and Python's cryptography package.
+python3 tests/docs_preview.py --image ddns-test:local
+```
 
-## 🙏 Credits
+The preview binds to loopback, prints its URL and fixture login, and deletes its
+temporary container and database when stopped. Its local proxy supplies test
+forwarding headers to exercise the canonical-origin screens. No real Google
+login, authenticator enrollment or production CA issuance is performed.
 
-**Original Project:**  
-[dprandzioch/docker-ddns](https://github.com/dprandzioch/docker-ddns) - Original DynDNS server implementation
+## License and project history
 
-**Web UI Fork:**  
-[benjaminbear/docker-ddns-server](https://github.com/benjaminbear/docker-ddns-server) - Added web UI for management
-
-**Enhanced Fork:**  
-[w3K-one/docker-ddns-server](https://github.com/w3K-one/docker-ddns-server) - Security features, modern auth, multi-platform support
-
-### Major Enhancements in This Fork
-
-- 🔒 IP blocking and threat protection system
-- 🔐 Session-based authentication with modern login
-- 📊 Security dashboard for monitoring attacks
-- 🌐 HTTPS enforcement with reverse proxy support
-- 🎨 Enhanced UI/UX with logo support and sticky header
-- 📦 Multi-platform Docker builds (amd64, arm64, arm, 386)
-- 🔄 Automatic data migration and normalization
-- 📝 Comprehensive documentation
-- 🤖 Automated CI/CD with GitHub Actions
-- 🏷️ Semantic versioning with automatic releases
-
----
-
-## 💬 Support
-
-- **Issues:** [GitHub Issues](https://github.com/w3K-one/docker-ddns-server/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/w3K-one/docker-ddns-server/discussions)
-- **Docker Hub:** [w3kllc/ddns](https://hub.docker.com/r/w3kllc/ddns)
-
----
-
-## 🗺️ Roadmap
-
-Potential future enhancements:
-- Email notifications for security events
-- Two-factor authentication (2FA)
-- API rate limiting
-- Web-based configuration wizard
-- DNS over HTTPS (DoH) support
-- Prometheus metrics export
-- Docker Swarm / Kubernetes support
-- Advanced search and filtering in logs
-- Bulk host management
-
-Have an idea? [Open an issue](https://github.com/w3K-one/docker-ddns-server/issues) or start a [discussion](https://github.com/w3K-one/docker-ddns-server/discussions)!
-
----
-
-**Made with ❤️ by the community**
+[MIT License](LICENSE). Maintained by **w3K LLC**, building on
+[David Prandzioch's Docker DDNS server](https://github.com/dprandzioch/docker-ddns)
+and [Benjamin Bärthlein's web UI fork](https://github.com/benjaminbear/docker-ddns-server).

@@ -157,7 +157,7 @@ func (s *Service) issue(c *Certificate) {
 			delay = 24 * time.Hour
 		}
 		// Provider errors are kept out of pages/logs: they can include DNS tokens or CA payloads.
-		s.DB.Model(c).Updates(map[string]interface{}{"status": "failed", "last_error": "Certificate operation failed. Check DNS delegation, CAA policy, CA availability and account email; then retry.", "failures": c.Failures, "next_attempt": time.Now().Add(delay)})
+		s.DB.Model(c).Updates(map[string]interface{}{"status": "failed", "last_error": certificateFailureMessage(err), "failures": c.Failures, "next_attempt": time.Now().Add(delay)})
 		s.Audit(c.ID, "issue", "failed")
 		return
 	}
@@ -276,7 +276,8 @@ func (s *Service) obtain(c *Certificate) (*certificate.Resource, error) {
 	provider := &Provider{Store: s.Records, DB: s.DB}
 	defer provider.CleanupAll()
 	options := []dns01.ChallengeOption{}
-	if ns := os.Getenv("DDNS_ACME_AUTHORITATIVE_NS"); ns != "" {
+	{
+		ns := authoritativeNameserver()
 		if _, _, e := net.SplitHostPort(ns); e != nil {
 			ns = net.JoinHostPort(ns, "53")
 		}

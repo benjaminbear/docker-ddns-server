@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/w3K-one/docker-ddns-server/dyndns/model"
 	"github.com/labstack/gommon/log"
+	"github.com/w3K-one/docker-ddns-server/dyndns/model"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +18,7 @@ const (
 // LogFailedAuth records a failed authentication attempt
 // WARNING: This logs passwords which is a security risk. Ensure database is properly secured.
 // IMPORTANT: IP blocking only applies to admin panel attempts (/@/*), not API endpoints
-func (h *Handler) LogFailedAuth(ipAddress, userAgent, path, username, password string) error {
+func (h *Handler) LogFailedAuth(ipAddress, userAgent, path, username, password string, requestedHostname ...string) error {
 	failedAuth := &model.FailedAuth{
 		IPAddress: ipAddress,
 		UserAgent: userAgent,
@@ -26,6 +26,14 @@ func (h *Handler) LogFailedAuth(ipAddress, userAgent, path, username, password s
 		Path:      path,
 		Username:  username,
 		Password:  password, // SECURITY WARNING: Storing attempted passwords
+	}
+
+	if len(requestedHostname) > 0 {
+		hostname := []rune(strings.ToLower(strings.TrimSpace(requestedHostname[0])))
+		if len(hostname) > 253 {
+			hostname = hostname[:253]
+		}
+		failedAuth.Hostname = string(hostname)
 	}
 
 	if err := h.DB.Create(failedAuth).Error; err != nil {
@@ -109,7 +117,7 @@ func (h *Handler) BlockIP(ipAddress string, failureCount int, reason string) err
 		return err
 	}
 
-	log.Warnf("Blocked IP %s for %v (failures: %d, reason: %s)", 
+	log.Warnf("Blocked IP %s for %v (failures: %d, reason: %s)",
 		ipAddress, BlockDuration, failureCount, reason)
 
 	return nil
@@ -151,7 +159,7 @@ func (h *Handler) UnblockIP(ipAddress string) error {
 func GetClientIP(r interface{}) string {
 	// This function can be enhanced to check X-Forwarded-For, X-Real-IP headers
 	// For now, we'll use a simple extraction
-	
+
 	// You'll need to pass the Echo context here
 	// This is a helper that should be called from middleware
 	return ""
@@ -161,7 +169,7 @@ func GetClientIP(r interface{}) string {
 func (h *Handler) CleanupExpiredBlocks() error {
 	result := h.DB.Where("is_permanent = ? AND blocked_until < ?", false, time.Now()).
 		Delete(&model.BlockedIP{})
-	
+
 	if result.Error != nil {
 		log.Error("Failed to cleanup expired blocks:", result.Error)
 		return result.Error
@@ -178,9 +186,9 @@ func (h *Handler) CleanupExpiredBlocks() error {
 func (h *Handler) CleanupOldFailedAuths() error {
 	// Keep records for 30 days
 	cutoffTime := time.Now().Add(-30 * 24 * time.Hour)
-	
+
 	result := h.DB.Where("timestamp < ?", cutoffTime).Delete(&model.FailedAuth{})
-	
+
 	if result.Error != nil {
 		log.Error("Failed to cleanup old failed auths:", result.Error)
 		return result.Error

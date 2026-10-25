@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// Store serializes static record edits. Legacy address and alias RRsets remain owned by their original pages.
+// Store serializes DNS record edits; dynamic addresses remain owned by Hosts.
 type Store struct {
 	DB    *gorm.DB
 	Zones []string
@@ -85,11 +85,23 @@ func (s *Store) Replace(zone, name, kind string, ttl int, values []string) error
 			return fmt.Errorf("address belongs to a DDNS host; use Hosts")
 		}
 		var aliases int64
-		if err := tx.Model(&model.CName{}).Joins("JOIN hosts ON hosts.id = c_names.target_id").Where("hosts.domain = ? AND c_names.hostname = ?", zone, base).Count(&aliases).Error; err != nil {
+		if err := tx.Model(&model.CName{}).Joins("JOIN hosts ON hosts.id = c_names.target_id").Where("hosts.domain = ? AND c_names.hostname IN ?", zone, []string{name, base}).Count(&aliases).Error; err != nil {
 			return err
 		}
 		if aliases > 0 {
-			return fmt.Errorf("name belongs to a legacy CNAME; use CNames")
+			var exactAliases int64
+			if err := tx.Model(&model.CName{}).Joins("JOIN hosts ON hosts.id = c_names.target_id").Where("hosts.domain = ? AND c_names.hostname = ?", zone, name).Count(&exactAliases).Error; err != nil {
+				return err
+			}
+			if kind != "CNAME" || exactAliases != aliases {
+				return fmt.Errorf("CNAME cannot coexist with other records")
+			}
+			// Transfer an existing alias into the common record store only when
+			// explicitly saved or deleted. A DNS failure rolls this back too.
+			ids := tx.Model(&model.CName{}).Select("c_names.id").Joins("JOIN hosts ON hosts.id = c_names.target_id").Where("hosts.domain = ? AND c_names.hostname = ?", zone, name)
+			if err := tx.Unscoped().Where("id IN (?)", ids).Delete(&model.CName{}).Error; err != nil {
+				return err
+			}
 		}
 		var conflicts int64
 		q := tx.Model(&model.Record{}).Where("domain = ? AND name = ?", zone, name)

@@ -37,3 +37,6 @@
 .cnames-table .entry-name { width:34%; }
 .cnames-table .entry-ttl { width:12%; }
 .cnames-table .entry-actions { width:10%; }
+
+.entries-table .entry-timestamp { white-space:nowrap; }
+.entry-time-sort svg { width:20px; height:20px; vertical-align:middle; }

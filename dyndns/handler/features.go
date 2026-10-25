@@ -58,6 +58,7 @@ func (h *Handler) FeatureRoutes(g *echo.Group) {
 	g.GET("/records", h.ListRecords)
 	g.POST("/records", h.SaveRecords)
 	g.GET("/certs", h.ListCertificates)
+	g.GET("/certs/status", h.CertificateStatus)
 	g.POST("/certs", h.NewCertificate)
 	g.POST("/certs/automation", h.SaveCertificateAutomation)
 	g.POST("/certs/:id/renew", h.RenewCertificate)
@@ -71,31 +72,54 @@ func (h *Handler) page(c echo.Context) echo.Map {
 
 type rrView struct {
 	Name, Type string
+	Zone       string
 	TTL        int
 	Values     string
 }
 
 func (h *Handler) ListRecords(c echo.Context) error {
 	zone := c.QueryParam("zone")
-	if zone == "" && len(h.Config.Domains) > 0 {
-		zone = h.Config.Domains[0]
+	if zone == "" {
+		zone = "all"
 	}
-	if !h.Records.Zone(zone) {
+	if zone != "all" && !h.Records.Zone(zone) {
 		return echo.NewHTTPError(400, "Unknown zone")
 	}
 	var rows []model.Record
-	if e := h.DB.Where("domain = ?", zone).Order("name,type,id").Find(&rows).Error; e != nil {
+	query := h.DB.Where("domain IN ?", h.Config.Domains)
+	if zone != "all" {
+		query = query.Where("domain = ?", zone)
+	}
+	if e := query.Order("id ASC").Find(&rows).Error; e != nil {
 		return e
 	}
 	sets := []rrView{}
+	indexes := map[[3]string]int{}
 	for _, r := range rows {
-		if len(sets) > 0 && sets[len(sets)-1].Name == r.Name && sets[len(sets)-1].Type == r.Type {
-			sets[len(sets)-1].Values += "\n" + r.Value
+		key := [3]string{r.Domain, r.Name, r.Type}
+		if index, exists := indexes[key]; exists {
+			sets[index].Values += "\n" + r.Value
 		} else {
-			sets = append(sets, rrView{r.Name, r.Type, r.TTL, r.Value})
+			indexes[key] = len(sets)
+			sets = append(sets, rrView{Name: r.Name, Type: r.Type, Zone: r.Domain, TTL: r.TTL, Values: r.Value})
 		}
 	}
+	var aliases []model.CName
+	aliasQuery := h.DB.Preload("Target").Joins("JOIN hosts ON hosts.id = c_names.target_id").Where("hosts.domain IN ? AND hosts.deleted_at IS NULL", h.Config.Domains)
+	if zone != "all" {
+		aliasQuery = aliasQuery.Where("hosts.domain = ?", zone)
+	}
+	if err := aliasQuery.Order("c_names.id ASC").Find(&aliases).Error; err != nil {
+		return err
+	}
+	for _, alias := range aliases {
+		sets = append(sets, rrView{Name: alias.Hostname, Type: "CNAME", Zone: alias.Target.Domain, TTL: alias.Ttl, Values: alias.Target.Hostname + "." + alias.Target.Domain + "."})
+	}
 	data := h.page(c)
+	data["selectedType"] = "TXT"
+	if c.QueryParam("type") == "CNAME" {
+		data["selectedType"] = "CNAME"
+	}
 	data["zone"] = zone
 	data["sets"] = sets
 	data["types"] = nswrapper.Types
@@ -252,4 +276,20 @@ func (h *Handler) HostCertificatePackage(c echo.Context) error {
 		return echo.NewHTTPError(404, "No dedicated production certificate for this host; issue a host certificate from Certificates")
 	}
 	return c.Redirect(302, fmt.Sprintf("/@/certs/%d/download/package.zip", cert.ID))
+}
+
+// CertificateStatus exposes only public job metadata, never certificate material or keys.
+func (h *Handler) CertificateStatus(c echo.Context) error {
+	c.Response().Header().Set("Cache-Control", "no-store")
+	if h.Certificates == nil {
+		return echo.NewHTTPError(503, "Certificate storage unavailable")
+	}
+	var rows []struct {
+		ID     uint   `json:"id"`
+		Status string `json:"status"`
+	}
+	if err := h.DB.Model(&certificates.Certificate{}).Select("id", "status").Order("id").Find(&rows).Error; err != nil {
+		return err
+	}
+	return c.JSON(200, rows)
 }

@@ -1,5 +1,6 @@
 {{define "content"}}
-<h2 class="mt-4">Passkeys</h2>
+<div class="marketing">
+<h2>Passkeys</h2>
 <p>Use your device’s fingerprint, face recognition, screen lock or security key to sign in. Private keys stay with your authenticator.</p>
 <p>Sign in again before adding or removing a passkey; these actions require a sign-in within the last five minutes.</p>
 <form id="passkey-register" class="feature-toolbar">
@@ -12,4 +13,5 @@
 {{else}}<p>No passkeys registered. Add one while signed in with your existing admin account.</p>{{end}}
 <p><a href="/@/security">Back to security</a> · <a href="/@/logout">Sign out</a></p>
 <script src="/static/js/passkeys.js"></script>
+</div>
 {{end}}

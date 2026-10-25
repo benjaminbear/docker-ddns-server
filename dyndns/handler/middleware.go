@@ -133,7 +133,7 @@ func (h *Handler) UpdateAuthMiddleware() echo.MiddlewareFunc {
 				log.Warnf("Failed DynDNS API authentication from IP %s, username: %s", clientIP, username)
 
 				// Log the failed attempt (but DON'T trigger IP blocking for API endpoints)
-				h.LogFailedAuth(clientIP, c.Request().UserAgent(), c.Path(), username, password)
+				h.LogFailedAuth(clientIP, c.Request().UserAgent(), c.Path(), username, password, c.QueryParam("hostname"))
 
 				return c.String(http.StatusUnauthorized, "badauth\n")
 			}

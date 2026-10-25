@@ -208,7 +208,7 @@ dyndns/
   views/                  goview templates (master layout + pages)
   static/                 bootstrap 4, jQuery 3.4.1, jQuery UI, actions-1.0.0.js, icons
 deployment/  Dockerfile, setup.sh, named.conf.options, docker-compose.yml, envfile
-.github/workflows/  build.yml, BuildEmAll.yml, containers.yml (legacy)
+.github/workflows/  build.yml, BuildEmAll.yml
 ```
 
 ### 3.1 `dyndns/main.go`
@@ -454,7 +454,7 @@ A CNAME inherits its zone from an existing target Host; there is no independent 
 - Runtime is Debian 12 plus BIND9, dnsutils and curl (`deployment/Dockerfile:12`). The copied BIND options file is explicitly mode 0644 so builds from restrictive local checkouts remain readable by the bind user (`deployment/Dockerfile:21`). CMD is a shell sequence with semicolons: setup, `service named start`, Go app. It does **not** use exec or a supervisor and does not stop after setup failure (`deployment/Dockerfile:29`).
 - Setup writes `/etc/bind/named.conf`, not `named.conf.local`, and creates missing zone files. Public-address discovery now forces IPv4 (`deployment/setup.sh:8`, `deployment/setup.sh:15`, `deployment/setup.sh:26`). Existing zone files are preserved.
 - The image workflow triggers on master changes to `dyndns/**`, `deployment/**`, or itself, and supports manual dispatch (`.github/workflows/BuildEmAll.yml:5`). It builds **amd64, 386, arm/v7 and arm64**, pushes version/latest tags, and creates a release (`.github/workflows/BuildEmAll.yml:92`, `.github/workflows/BuildEmAll.yml:97`). Version comes from the commit message or an incremented existing tag (`.github/workflows/BuildEmAll.yml:29`).
-- Separate Go CI builds/tests all packages on every push (`.github/workflows/build.yml:4`, `.github/workflows/build.yml:19`). A legacy image workflow also runs on tag pushes (`.github/workflows/containers.yml:5`); it has its own image naming and architecture list.
+- Separate Go CI builds/tests all packages on branch pushes only (`.github/workflows/build.yml`). Tag pushes do not duplicate the checks. The obsolete tag-triggered image publisher has been removed; `BuildEmAll.yml` is the sole image publisher.
 - Local: export `DDNS_SESSION_SECRET`, then `docker compose -f deployment/docker-compose.yml up --build`. Compose now has an explicit build context and requires the secret (`deployment/docker-compose.yml:5`). Supply real admin credentials for normal use; its bundled admin hash is only a placeholder. Port mappings are 53 TCP/UDP and 8080 (`deployment/docker-compose.yml:16`). Use the configured `dyndns.example.com` zone for local API/dig checks.
 - Checks: `cd dyndns && go build ./... && go test -race ./... && go vet ./...`. M0 regression suites cover authentication, target-ID SQL input, transaction rollback and DNS cascade, unique migration, secret validation, proxy boundaries and header-log suppression (`dyndns/handler/hardening_test.go:1`, `dyndns/nswrapper/hardening_test.go:1`). Existing parser tests remain (`dyndns/ipparser/ipparser_test.go:1`). Container smoke tests are in `tests/m0_smoke.py:1`.
 

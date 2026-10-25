@@ -1,5 +1,5 @@
 {{define "content"}}
-<link rel="stylesheet" href="/static/css/entry-list.css">
+<link rel="stylesheet" href="/static/css/entry-list.css?v=2.2.2-clock">
 <div class="marketing">
     <div class="entries-toolbar"><h3>DNS Host Entries</h3><div class="entries-toolbar-actions"><label class="sr-only" for="entry-zone-filter">Filter by zone</label><select id="entry-zone-filter" class="custom-select custom-select-sm entry-zone-filter"><option value="">All zones</option>{{range .domains}}<option value="{{.}}">{{.}}</option>{{end}}</select><button type="button" class="entry-sort-reset btn btn-outline-secondary entry-icon" title="Restore original entry order" aria-label="Restore original entry order" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 9M3 3v7h7"/></svg></button><button class="addHost btn btn-primary btn-sm">Add Host Entry</button></div></div>
     <table class="table table-striped text-center entries-table">
@@ -8,7 +8,7 @@
             <th scope="col" class="entry-name" aria-sort="none"><button type="button" class="entry-sort" data-sort="hostname">Hostname</button></th>
             <th scope="col" class="entry-ip" aria-sort="none"><button type="button" class="entry-sort" data-sort="ip">IP</button></th>
             <th scope="col" class="entry-ttl" aria-sort="none"><button type="button" class="entry-sort" data-sort="ttl">TTL</button></th>
-            <th scope="col" class="entry-updated" aria-sort="none"><button type="button" class="entry-sort" data-sort="updated">LastUpdate</button></th>
+            <th scope="col" class="entry-updated" aria-sort="none"><button type="button" class="entry-sort entry-time-sort" data-sort="updated" title="{{displayTimezone}}" aria-label="Sort by last update ({{displayTimezone}})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></button></th>
             <th scope="col" class="entry-cert">Cert</th>
             <th scope="col" class="entry-actions"><span class="sr-only">Actions</span></th>
         </tr>
@@ -19,7 +19,7 @@
             <td data-label="Hostname" class="entry-name" id="host-hostname_{{.ID}}">{{.Hostname}}.{{.Domain}}</td>
             <td data-label="IP" data-sort-value="{{.Ip}}">{{.Ip}}</td>
             <td data-label="TTL" data-sort-value="{{.Ttl}}">{{.Ttl}}</td>
-            <td data-label="LastUpdate" data-sort-value="{{.LastUpdate.Unix}}">{{if .LastUpdate.IsZero}}Never{{else}}{{.LastUpdate.Format "01/02/2006 15:04 MEZ"}}{{end}}</td>
+            <td class="entry-timestamp" data-label="🕒" data-sort-value="{{.LastUpdate.Unix}}">{{if .LastUpdate.IsZero}}Never{{else}}{{displayTime .LastUpdate}}{{end}}</td>
             <td data-label="Cert">{{if index $.hostCertificates .ID}}<a class="btn btn-outline-primary btn-sm entry-icon" href="/@/hosts/{{.ID}}/certificate.zip" title="Download certificate, chain and key" aria-label="Download certificate package for {{.Hostname}}.{{.Domain}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg></a>{{else}}<a class="btn btn-outline-secondary btn-sm entry-icon" href="/@/certs?domains={{.Hostname}}.{{.Domain}}" title="Issue certificate" aria-label="Issue certificate for {{.Hostname}}.{{.Domain}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6zM12 8v8m-4-4h8"/></svg></a>{{end}}</td>
             <td data-label="Actions">
                 <div style="display:none">

@@ -278,3 +278,31 @@ func TestProxyCannotEvadeBlock(t *testing.T) {
 		t.Fatalf("wrong block response: %v %d", err, rec.Code)
 	}
 }
+
+func TestFailedUpdateCapturesRequestedHostname(t *testing.T) {
+	h := &Handler{DB: testDB(t)}
+	e := echo.New()
+	e.GET("/nic/update", func(c echo.Context) error { return c.NoContent(200) }, h.UpdateAuthMiddleware())
+	req := httptest.NewRequest("GET", "/nic/update?hostname=LW.DVR.Bz&password=not-for-hostname-log", nil)
+	req.SetBasicAuth("Quad", "fixture-wrong-password")
+	rec := httptest.NewRecorder()
+	e.ServeHTTP(rec, req)
+	if rec.Code != 401 {
+		t.Fatal(rec.Code)
+	}
+	var row model.FailedAuth
+	if err := h.DB.First(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	if row.Hostname != "lw.dvr.bz" || row.Path != "/nic/update" {
+		t.Fatal(row.Hostname, row.Path)
+	}
+	if err := h.LogFailedAuth("192.0.2.1", "fixture", "/nic/update", "fixture", "fixture", strings.Repeat("x", 300)); err != nil {
+		t.Fatal(err)
+	}
+	var newest model.FailedAuth
+	h.DB.Order("id desc").First(&newest)
+	if len(newest.Hostname) != 253 {
+		t.Fatal("hostname must be bounded")
+	}
+}

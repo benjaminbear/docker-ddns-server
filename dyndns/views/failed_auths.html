@@ -84,6 +84,11 @@
             border-top-color: #2c3e50;
         }
         
+        .hostname-tooltip { cursor: help; }
+        .hostname-tooltip .speech-tooltip { width: max-content; max-width: min(320px, 80vw); overflow-wrap: anywhere; }
+        .hostname-tooltip:hover .speech-tooltip,
+        .hostname-tooltip:focus .speech-tooltip { opacity: 1; visibility: visible; }
+
         /* Show tooltip when active */
         .speech-tooltip.active {
             opacity: 1;
@@ -173,7 +178,7 @@
             {{end}}
             <tr class="{{$rowClass}}">
                 <td>{{$auth.Timestamp.Format "01/02/2006 15:04:05"}}</td>
-                <td><code>{{$auth.IPAddress}}</code></td>
+                <td><span class="tooltip-container hostname-tooltip" tabindex="0" aria-describedby="failed-host-{{$auth.ID}}"><code>{{$auth.IPAddress}}</code><span class="speech-tooltip" role="tooltip" id="failed-host-{{$auth.ID}}">{{if $auth.Hostname}}{{$auth.Hostname}}{{else}}Hostname not recorded{{end}}</span></span></td>
                 <td>{{if $auth.Username}}<strong>{{$auth.Username}}</strong>{{else}}<em class="text-muted">no credentials</em>{{end}}</td>
                 <td>
                     {{if $auth.Password}}

@@ -10,13 +10,14 @@ import (
 // WARNING: This includes password logging which is a security risk.
 // Passwords should be handled carefully and never displayed without authorization.
 type FailedAuth struct {
+	Hostname string // Requested update hostname; empty for old or non-update records.
 	gorm.Model
-	IPAddress    string    `gorm:"index;not null"`
-	UserAgent    string
-	Timestamp    time.Time `gorm:"index"`
-	Path         string    // The path they tried to access
-	Username     string    // Username they attempted (if provided)
-	Password     string    // Password they attempted (SECURITY RISK - handle carefully)
+	IPAddress string `gorm:"index;not null"`
+	UserAgent string
+	Timestamp time.Time `gorm:"index"`
+	Path      string    // The path they tried to access
+	Username  string    // Username they attempted (if provided)
+	Password  string    // Password they attempted (SECURITY RISK - handle carefully)
 }
 
 // BlockedIP represents an IP that has been blocked
@@ -26,7 +27,7 @@ type BlockedIP struct {
 	BlockedAt     time.Time `gorm:"index"`
 	BlockedUntil  time.Time `gorm:"index"` // For temporary blocks
 	FailureCount  int
-	IsPermanent   bool      // Flag for permanent blocks
+	IsPermanent   bool // Flag for permanent blocks
 	LastAttemptAt time.Time
 	Reason        string
 }

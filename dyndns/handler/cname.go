@@ -12,40 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListCNames fetches all cnames from database and lists them on the website.
-func (h *Handler) ListCNames(c echo.Context) (err error) {
-	// Auth check removed - middleware handles this
-	cnames := new([]model.CName)
-	if err = h.DB.Preload("Target").Order("id ASC").Find(cnames).Error; err != nil {
-		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-	}
-
-	return c.Render(http.StatusOK, "listcnames", echo.Map{
-		"cnames":       cnames,
-		"domains":      h.Config.Domains,
-		"title":        h.Title,
-		"logoPath":     h.LogoPath,
-		"poweredBy":    h.PoweredBy,
-		"poweredByUrl": h.PoweredByUrl,
-	})
+// Keep existing bookmarks working after consolidating aliases into DNS records.
+func (h *Handler) ListCNames(c echo.Context) error {
+	return c.Redirect(http.StatusSeeOther, "/@/records")
 }
-
-// AddCName just renders the "add cname" website.
-// Therefore all host entries from the database are being fetched.
-func (h *Handler) AddCName(c echo.Context) (err error) {
-	hosts := new([]model.Host)
-	if err = h.DB.Find(hosts).Error; err != nil {
-		return c.JSON(http.StatusBadRequest, &Error{err.Error()})
-	}
-
-	return c.Render(http.StatusOK, "addcname", echo.Map{
-		"config":       h.Config,
-		"hosts":        hosts,
-		"title":        h.Title,
-		"logoPath":     h.LogoPath,
-		"poweredBy":    h.PoweredBy,
-		"poweredByUrl": h.PoweredByUrl,
-	})
+func (h *Handler) AddCName(c echo.Context) error {
+	return c.Redirect(http.StatusSeeOther, "/@/records?type=CNAME")
 }
 
 // CreateCName validates the cname data from the "add cname" website,

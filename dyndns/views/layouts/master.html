@@ -68,6 +68,8 @@
         .record-card textarea { font-family:monospace; }
         .feature-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
         .cert-names { overflow-wrap:anywhere; }
+        [data-record-sort][data-direction="ascending"]::after { content:" ↑"; }
+        [data-record-sort][data-direction="descending"]::after { content:" ↓"; }
     </style>
 </head>
 
@@ -79,7 +81,6 @@
         <nav>
             <ul class="nav nav-pills float-right" aria-label="Main navigation">
 <li class="nav-item"><a class="nav-link nav-hosts" href="/@/hosts" title="Hosts" aria-label="Hosts"><span aria-hidden="true">⌂</span><span class="sr-only">Hosts</span></a></li>
-<li class="nav-item"><a class="nav-link nav-cnames" href="/@/cnames" title="CNames" aria-label="CNames"><span aria-hidden="true">🔗</span><span class="sr-only">CNames</span></a></li>
 <li class="nav-item"><a class="nav-link nav-records" href="/@/records" title="DNS records" aria-label="DNS records"><span aria-hidden="true">☷</span><span class="sr-only">DNS records</span></a></li>
 <li class="nav-item"><a class="nav-link nav-certs" href="/@/certs" title="Certificates" aria-label="Certificates"><span aria-hidden="true">🛡</span><span class="sr-only">Certificates</span></a></li>
 <li class="nav-item"><a class="nav-link nav-logs" href="/@/logs" title="Update logs" aria-label="Update logs"><span aria-hidden="true">≡</span><span class="sr-only">Update logs</span></a></li>
