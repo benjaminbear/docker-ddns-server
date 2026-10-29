@@ -1,0 +1,213 @@
+{{define "content"}}
+<style>
+    /* Hide the header/navigation on login page */
+    .header {
+        display: none !important;
+    }
+
+    /* Override container styles for full-page login */
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* Full-page background */
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        min-height: 100vh;
+    }
+
+    .login-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .login-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        padding: 2rem;
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .logo-container {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .llogo {
+        max-height: 80px;
+        max-width: 200px;
+    }
+
+    .login-title {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    .login-icon {
+        font-size: 48px;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 12px;
+        font-weight: 500;
+        transition: transform 0.2s;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .alert {
+        margin-bottom: 1.5rem;
+    }
+
+    .remember-me {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .security-note {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e5e5e5;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .https-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        background: #d4edda;
+        color: #155724;
+        border-radius: 4px;
+        font-size: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .https-indicator.insecure {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    /* Hide footer on login page */
+    .footer {
+        display: none !important;
+    }
+</style>
+
+<div class="login-wrapper">
+    <div class="login-container">
+        <div class="logo-container">
+            {{if .logoPath}}
+                <img src="{{.logoPath}}" alt="{{.title}}" class="llogo">
+            {{else}}
+                <div class="login-icon">🔐</div>
+                <h2 class="login-title">{{.title}}</h2>
+            {{end}}
+        </div>
+
+        {{if .error}}
+        <div class="alert alert-danger" role="alert">
+            {{if eq .error "invalid_credentials"}}
+                <strong>Login Failed!</strong> Invalid username or password.
+            {{else if eq .error "authentication_error"}}
+                <strong>Error!</strong> Authentication system error. Please try again.
+            {{else if eq .error "session_error"}}
+                <strong>Error!</strong> Could not create session. Please try again.
+            {{else}}
+                <strong>Error!</strong> {{.error}}
+            {{end}}
+        </div>
+        {{end}}
+
+        {{if .googleEnabled}}<a class="btn btn-outline-primary btn-block mb-3" href="{{.authOrigin}}/@/auth/google">Sign in with Google</a>{{end}}
+        {{if .passkeysEnabled}}<button type="button" class="btn btn-outline-secondary btn-block mb-3" id="passkey-login" data-origin="{{.authOrigin}}">Sign in with a passkey</button><p id="passkey-message" role="status" class="text-danger"></p><script src="/static/js/passkeys.js"></script>{{end}}
+        <form method="POST" action="/@/login">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text"
+                       class="form-control"
+                       id="username"
+                       name="username"
+                       required
+                       autofocus
+                       placeholder="Enter username"
+                       autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password"
+                       class="form-control"
+                       id="password"
+                       name="password"
+                       required
+                       placeholder="Enter password"
+                       autocomplete="current-password">
+            </div>
+
+            <div class="remember-me">
+                <div class="custom-control custom-checkbox">
+                    <input type="checkbox"
+                           class="custom-control-input"
+                           id="remember_me"
+                           name="remember_me">
+                    <label class="custom-control-label" for="remember_me">
+                        Remember me for 30 days
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-login btn-block">
+                Login
+            </button>
+        </form>
+
+        <div class="security-note">
+            <small>
+                🔒 Your credentials are protected<br>
+                Session expires after 24 hours (or 30 days if remembered)<br>
+                <div id="https-status"></div>
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Check if HTTPS is enabled
+    (function() {
+        var isHTTPS = window.location.protocol === 'https:';
+        var statusDiv = document.getElementById('https-status');
+
+        if (isHTTPS) {
+            statusDiv.innerHTML = '<div class="https-indicator">✓ Secure HTTPS Connection</div>';
+        } else {
+            statusDiv.innerHTML = '<div class="https-indicator insecure">⚠ HTTP Connection (HTTPS Recommended)</div>';
+        }
+    })();
+
+    // Focus on username field
+    document.getElementById('username').focus();
+</script>
+{{end}}

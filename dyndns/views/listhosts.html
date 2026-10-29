@@ -1,29 +1,29 @@
 {{define "content"}}
-<div class="container marketing">
-    <h3 class="text-center mb-4">DNS Host Entries</h3>
-    <table class="table table-striped text-center">
+<link rel="stylesheet" href="/static/css/entry-list.css?v=2.2.2-clock">
+<div class="marketing">
+    <div class="entries-toolbar"><h3>DNS Host Entries</h3><div class="entries-toolbar-actions"><label class="sr-only" for="entry-zone-filter">Filter by zone</label><select id="entry-zone-filter" class="custom-select custom-select-sm entry-zone-filter"><option value="">All zones</option>{{range .domains}}<option value="{{.}}">{{.}}</option>{{end}}</select><button type="button" class="entry-sort-reset btn btn-outline-secondary entry-icon" title="Restore original entry order" aria-label="Restore original entry order" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 9M3 3v7h7"/></svg></button><button class="addHost btn btn-primary btn-sm">Add Host Entry</button></div></div>
+    <table class="table table-striped text-center entries-table">
         <thead>
         <tr>
-            <th>Domain</th>
-            <th>Hostname</th>
-            <th>IP</th>
-            <th>TTL</th>
-            <th>LastUpdate</th>
-            <th>
-                <button class="addHost btn btn-primary">Add Host Entry</button>
-            </th>
+            <th scope="col" class="entry-name" aria-sort="none"><button type="button" class="entry-sort" data-sort="hostname">Hostname</button></th>
+            <th scope="col" class="entry-ip" aria-sort="none"><button type="button" class="entry-sort" data-sort="ip">IP</button></th>
+            <th scope="col" class="entry-ttl" aria-sort="none"><button type="button" class="entry-sort" data-sort="ttl">TTL</button></th>
+            <th scope="col" class="entry-updated" aria-sort="none"><button type="button" class="entry-sort entry-time-sort" data-sort="updated" title="{{displayTimezone}}" aria-label="Sort by last update ({{displayTimezone}})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></button></th>
+            <th scope="col" class="entry-cert">Cert</th>
+            <th scope="col" class="entry-actions"><span class="sr-only">Actions</span></th>
         </tr>
         </thead>
         <tbody>
         {{range .hosts}}
-        <tr id="host_{{.ID}}">
-            <td id="host-domain_{{.ID}}">{{.Domain}}</td>
-            <td id="host-hostname_{{.ID}}">{{.Hostname}}.{{.Domain}}</td>
-            <td>{{.Ip}}</td>
-            <td>{{.Ttl}}</td>
-            <td>{{.LastUpdate.Format "01/02/2006 15:04 MEZ"}}</td>
-            <td>
+        <tr id="host_{{.ID}}" data-zone="{{.Domain}}">
+            <td data-label="Hostname" class="entry-name" id="host-hostname_{{.ID}}">{{.Hostname}}.{{.Domain}}</td>
+            <td data-label="IP" data-sort-value="{{.Ip}}">{{.Ip}}</td>
+            <td data-label="TTL" data-sort-value="{{.Ttl}}">{{.Ttl}}</td>
+            <td class="entry-timestamp" data-label="🕒" data-sort-value="{{.LastUpdate.Unix}}">{{if .LastUpdate.IsZero}}Never{{else}}{{displayTime .LastUpdate}}{{end}}</td>
+            <td data-label="Cert">{{if index $.hostCertificates .ID}}<a class="btn btn-outline-primary btn-sm entry-icon" href="/@/hosts/{{.ID}}/certificate.zip" title="Download certificate, chain and key" aria-label="Download certificate package for {{.Hostname}}.{{.Domain}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg></a>{{else}}<a class="btn btn-outline-secondary btn-sm entry-icon" href="/@/certs?domains={{.Hostname}}.{{.Domain}}" title="Issue certificate" aria-label="Issue certificate for {{.Hostname}}.{{.Domain}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6zM12 8v8m-4-4h8"/></svg></a>{{end}}</td>
+            <td data-label="Actions">
                 <div style="display:none">
+                    <span id="host-domain_{{.ID}}">{{.Domain}}</span>
                     <div id="host-username_{{.ID}}">
                         {{.UserName}}
                     </div>
@@ -32,17 +32,17 @@
                     </div>
                 </div>
 
-                <div class="btn-group" id="host_{{.ID}}" >
-                    <button id="{{.ID}}" class="editHost btn btn-outline-secondary btn-sm"><img
-                            src="/static/icons/pencil.svg" alt="" width="16" height="16" title="Edit"></button>&nbsp;
+                <div class="entry-action-buttons" >
+                    <button id="{{.ID}}" title="Edit host" aria-label="Edit host" class="editHost btn btn-outline-secondary btn-sm entry-icon"><img
+                            src="/static/icons/pencil.svg" alt="" width="16" height="16" title="Edit"></button>
                     <button
-                            id="{{.ID}}" class="deleteHost btn btn-outline-secondary btn-sm"><img
+                            id="{{.ID}}" title="Delete host" aria-label="Delete host" class="deleteHost btn btn-outline-secondary btn-sm entry-icon"><img
                             src="/static/icons/trash.svg"
                             alt="" width="16" height="16"
-                            title="Delete"></button> &nbsp;
-                    <button id="{{.ID}}" class="showHostLog btn btn-outline-secondary btn-sm"><img
-                            src="/static/icons/table.svg" alt="" width="16" height="16" title="Logs"></button> &nbsp;
-                    <button id="{{.ID}}" class="copyUrlToClipboard btn btn-outline-secondary btn-sm"><img
+                            title="Delete"></button>
+                    <button id="{{.ID}}" title="View update logs" aria-label="View update logs" class="showHostLog btn btn-outline-secondary btn-sm entry-icon"><img
+                            src="/static/icons/table.svg" alt="" width="16" height="16" title="Logs"></button>
+                    <button id="{{.ID}}" title="Copy update URL" aria-label="Copy update URL" class="copyUrlToClipboard btn btn-outline-secondary btn-sm entry-icon"><img
                             src="/static/icons/clipboard.svg" alt="" width="16" height="16" title="Copy URL to clipboard"></button>
                 </div>
             </td>
@@ -50,5 +50,15 @@
         {{end}}
         </tbody>
     </table>
+    <p class="entry-filter-empty text-muted" role="status" hidden>No hosts in this zone.</p>
+
 </div>
+
+{{ if .migrationReport }}
+<div class="alert alert-info">
+    <strong>Database Migration Report:</strong>
+    <p>The following legacy entries were automatically converted to lowercase. You can copy this for your records.</p>
+    <textarea class="form-control" rows="5" readonly>{{ .migrationReport }}</textarea>
+</div>
+{{ end }}
 {{end}}

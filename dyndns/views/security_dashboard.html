@@ -1,0 +1,439 @@
+{{define "content"}}
+<div class="container marketing">
+{{if .authOrigin}}<p class="security-passkeys"><a class="btn btn-outline-primary" href="{{.authOrigin}}/@/auth/passkeys">Manage passkeys</a></p>{{end}}
+    <h3 class="text-center mb-4">Security Dashboard</h3>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4 security-summary">
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Active Blocks</div>
+                <div class="card-body">
+                    <h2 class="card-title">{{.activeBlocks}}</h2>
+                    <p class="card-text">Blocked IPs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">Failed Attempts</div>
+                <div class="card-body">
+                    <h2 class="card-title">{{.failedCount}}</h2>
+                    <p class="card-text">Failed Login Attempts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-header">Total Blocks</div>
+                <div class="card-body">
+                    <h2 class="card-title">{{len .blockedIPs}}</h2>
+                    <p class="card-text">Total Blocked IPs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Blocked IPs -->
+    <h4 class="mb-3">Recently Blocked IPs</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>IP Address</th>
+                <th>Blocked At</th>
+                <th>Blocked Until</th>
+                <th>Failures</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .blockedIPs}}
+            {{if .IsBlocked}}
+            <tr>
+                <td><code>{{.IPAddress}}</code></td>
+                <td>{{.BlockedAt.Format "01/02/2006 15:04"}}</td>
+                <td>{{if .IsPermanent}}Permanent{{else}}{{.BlockedUntil.Format "01/02/2006 15:04"}}{{end}}</td>
+                <td><span class="badge badge-danger">{{.FailureCount}}</span></td>
+                <td><span class="badge badge-danger">Active</span></td>
+                <td>
+                    <button class="btn btn-sm btn-warning unblock-btn" data-ip="{{.IPAddress}}">Unblock</button>
+                </td>
+            </tr>
+            {{end}}
+            {{end}}
+        </tbody>
+    </table>
+
+    <!-- Recent Failed Authentication Attempts -->
+    <h4 class="mb-3 mt-4">Recent Failed Authentication Attempts</h4>
+    <div class="alert alert-warning" role="alert">
+        <strong>⚠️ Security Warning:</strong> This system logs attempted passwords for security analysis. Ensure database access is strictly controlled.
+    </div>
+    <div class="alert alert-info" role="alert">
+        <strong>📌 IP Blocking Policy:</strong> Only failed attempts to the admin panel (<code>/@/*</code>) count toward IP blocking.
+        API endpoint failures are logged but do NOT trigger automatic blocks.
+    </div>
+
+    <style>
+        /* Alternating yellow shades for API rows */
+        .table-warning-light {
+            background-color: #fff9e6 !important; /* Lighter yellow */
+        }
+
+        .table-warning {
+            background-color: #fff3cd !important; /* Standard yellow */
+        }
+
+        /* Tooltip container for positioning */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Speech bubble tooltip */
+        .speech-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: #2c3e50;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Password tooltips: single line, auto-width */
+        .pwd-btn + .speech-tooltip {
+            white-space: nowrap;
+            max-width: 90vw; /* Don't exceed viewport */
+        }
+
+        /* User Agent tooltips: multi-line, 50% table width */
+        .ua-btn + .speech-tooltip,
+        .ua-btn .speech-tooltip {
+            white-space: normal;
+            max-width: 50%; /* 50% of container width */
+            min-width: 200px;
+            word-wrap: break-word;
+            text-align: left;
+        }
+
+        /* Arrow pointing down */
+        .speech-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #2c3e50;
+        }
+
+        .hostname-tooltip { cursor: help; }
+        .hostname-tooltip .speech-tooltip { width: max-content; max-width: min(320px, 80vw); overflow-wrap: anywhere; }
+        .hostname-tooltip:hover .speech-tooltip,
+        .hostname-tooltip:focus .speech-tooltip { opacity: 1; visibility: visible; }
+
+        /* Show tooltip when active */
+        .speech-tooltip.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Clickable tooltip styling with cursor */
+        .tooltip-btn {
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            padding: 2px 6px;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .tooltip-btn:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        .tooltip-btn.active {
+            background-color: #ffc107 !important;
+        }
+
+        /* User Agent button - make it look clickable */
+        .ua-btn {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .ua-btn:hover {
+            background-color: rgba(0,0,0,0.03);
+        }
+
+        /* Copy feedback animation */
+        .copy-feedback {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 2000;
+            animation: fadeInOut 1.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* Truncated text styling */
+        .truncated {
+            /* No underline - clean look */
+        }
+    </style>
+
+    <table class="table table-striped" style="font-size: 14px">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>IP Address</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Path</th>
+                <th>User Agent</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $index, $auth := .failedAuths}}
+            {{$isAPI := not (hasPrefix $auth.Path "/@/")}}
+            {{$rowClass := ""}}
+            {{if $isAPI}}
+                {{if eq (mod $index 2) 0}}
+                    {{$rowClass = "table-warning"}}
+                {{else}}
+                    {{$rowClass = "table-warning-light"}}
+                {{end}}
+            {{end}}
+            <tr class="{{$rowClass}}">
+                <td>{{$auth.Timestamp.Format "01/02/2006 15:04:05"}} {{if gt $auth.RepeatCount 1}}<span class="badge badge-secondary" title="Repeated attempts">×{{$auth.RepeatCount}}</span>{{end}}</td>
+                <td><span class="tooltip-container hostname-tooltip" tabindex="0" aria-describedby="failed-host-{{$auth.ID}}"><code>{{$auth.IPAddress}}</code><span class="speech-tooltip" role="tooltip" id="failed-host-{{$auth.ID}}">{{if $auth.Hostname}}{{$auth.Hostname}}{{else}}Hostname not recorded{{end}}</span></span></td>
+                <td>{{if $auth.Username}}{{$auth.Username}}{{else}}<em>none</em>{{end}}</td>
+                <td>
+                    {{if $auth.Password}}
+                    <div class="tooltip-container">
+                        <button class="btn btn-sm btn-outline-secondary tooltip-btn pwd-btn">👁</button>
+                        <div class="speech-tooltip">
+                            <code style="color: #ffc107; font-weight: bold;">{{$auth.Password}}</code>
+                        </div>
+                    </div>
+                    {{else}}
+                    <em>none</em>
+                    {{end}}
+                </td>
+                <td>
+                    <code>{{$auth.Path}}</code>
+                    {{if hasPrefix $auth.Path "/@/"}}
+                    <span class="badge badge-danger ml-1">Admin</span>
+                    {{else}}
+                    <span class="badge badge-secondary ml-1">API</span>
+                    {{end}}
+                </td>
+                <td>
+                    {{if $auth.UserAgent}}
+                    {{$ua := $auth.UserAgent}}
+                    {{if gt (len $ua) 10}}
+                    <div class="tooltip-container">
+                        <button class="tooltip-btn ua-btn" title="Click to copy">
+                            <span class="truncated">{{slice $ua 0 10}}...</span>
+                        </button>
+                        <div class="speech-tooltip">
+                            <span style="color: #fff;">{{$ua}}</span>
+                        </div>
+                    </div>
+                    {{else}}
+                    <span class="ua-btn" style="cursor: pointer;" title="Click to copy">{{$ua}}</span>
+                    {{end}}
+                    {{else}}
+                    <em>none</em>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <div class="text-center mt-4">
+        <a href="/@/security/blocked-ips" class="btn btn-primary">View All Blocked IPs</a>
+        <a href="/@/security/failed-auths" class="btn btn-secondary">View All Failed Attempts</a>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    console.log('Security dashboard JavaScript loaded');
+
+    // Helper function to copy text to clipboard
+    function copyToClipboard(text, button) {
+        // Modern clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function() {
+                showCopyFeedback(button, 'Copied!');
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+                fallbackCopy(text, button);
+            });
+        } else {
+            // Fallback for older browsers
+            fallbackCopy(text, button);
+        }
+    }
+
+    // Fallback copy method
+    function fallbackCopy(text, button) {
+        var textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showCopyFeedback(button, 'Copied!');
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+            showCopyFeedback(button, 'Copy failed');
+        }
+        document.body.removeChild(textArea);
+    }
+
+    // Show copy feedback animation
+    function showCopyFeedback(button, message) {
+        var feedback = $('<div class="copy-feedback">' + message + '</div>');
+        $(button).closest('.tooltip-container, td').append(feedback);
+        setTimeout(function() {
+            feedback.remove();
+        }, 1500);
+    }
+
+    // Unblock IP button handler
+    $(document).on('click', '.unblock-btn', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        var ip = button.attr('data-ip');
+
+        console.log('Unblock button clicked for IP:', ip);
+
+        if (confirm('Are you sure you want to unblock IP: ' + ip + '?')) {
+            $.ajax({
+                url: '/@/security/unblock/' + encodeURIComponent(ip),
+                type: 'POST',
+                success: function(result) {
+                    console.log('Unblock success:', result);
+                    alert('IP ' + ip + ' has been unblocked successfully!');
+                    if (window.refreshLists) window.refreshLists(); else location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Unblock error:', xhr.responseText);
+                    alert('Error unblocking IP: ' + (xhr.responseText || error));
+                }
+            });
+        }
+    });
+
+    // Password tooltips: Click to toggle AND copy
+    $(document).on('click', '.pwd-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var button = $(this);
+        var tooltip = button.siblings('.speech-tooltip');
+        var password = button.closest('.tooltip-container').find('.speech-tooltip code').text();
+
+        // Copy password to clipboard
+        copyToClipboard(password, button);
+
+        // Close all other tooltips first
+        $('.speech-tooltip').removeClass('active');
+        $('.tooltip-btn').removeClass('active');
+
+        // Toggle this one
+        if (tooltip.hasClass('active')) {
+            tooltip.removeClass('active');
+            button.removeClass('active');
+        } else {
+            tooltip.addClass('active');
+            button.addClass('active');
+        }
+    });
+
+    // User Agent tooltips: Hover to show, Click to copy
+    $(document).on('mouseenter', '.ua-btn', function() {
+        var tooltip = $(this).siblings('.speech-tooltip');
+        tooltip.addClass('active');
+    });
+
+    $(document).on('mouseleave', '.ua-btn', function() {
+        var tooltip = $(this).siblings('.speech-tooltip');
+        // Small delay to allow moving mouse to tooltip
+        setTimeout(function() {
+            if (!tooltip.is(':hover')) {
+                tooltip.removeClass('active');
+            }
+        }, 100);
+    });
+
+    // Click on User Agent to copy
+    $(document).on('click', '.ua-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var button = $(this);
+        var userAgent = button.closest('.tooltip-container').find('.speech-tooltip span').text();
+
+        // If there's no tooltip (short UA), get text directly
+        if (!userAgent) {
+            userAgent = button.text().trim();
+        }
+
+        copyToClipboard(userAgent, button);
+    });
+
+    // Keep tooltip open if hovering over it
+    $(document).on('mouseenter', '.ua-btn + .speech-tooltip', function() {
+        $(this).addClass('active');
+    });
+
+    $(document).on('mouseleave', '.ua-btn + .speech-tooltip', function() {
+        $(this).removeClass('active');
+    });
+
+    // Close password tooltips when clicking anywhere else on page
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.pwd-btn').length) {
+            $('.pwd-btn').removeClass('active');
+            $('.pwd-btn').siblings('.speech-tooltip').removeClass('active');
+        }
+    });
+
+    console.log('Event handlers attached. Found', $('.unblock-btn').length, 'unblock buttons');
+    console.log('Event handlers attached. Found', $('.pwd-btn').length, 'password buttons');
+    console.log('Event handlers attached. Found', $('.ua-btn').length, 'user agent buttons');
+});
+</script>
+{{end}}

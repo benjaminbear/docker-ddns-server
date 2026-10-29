@@ -1,29 +1,16 @@
 {{define "content"}}
-    <div class="container marketing">
-        <h3 class="text-center mb-4">Log Entries</h3>
-        <table class="table table-striped text-center" style="font-size: 14px">
-            <thead>
-            <tr>
-                <th>Status</th>
-                <th>Hostname</th>
-                <th>IP sent</th>
-                <th>Timestamp</th>
-                <th>User Agent</th>
-                <th>Caller IP</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{range .logs}}
-                <tr class="errorTooltip" title="<b>{{if .Status}}Successful{{else}}Failed{{end}}</b><br>{{.Message}}">
-                    <td class="align-middle mx-auto"><div class="{{if .Status}}bg-success{{else}}bg-danger{{end}}" style="width: 16px; height: 16px; margin: auto"></div></td>
-                    <td>{{.Host.Hostname}}.{{.Host.Domain}}</td>
-                    <td>{{.SentIP}}</td>
-                    <td>{{.CreatedAt.Format "01/02/2006 15:04"}}</td>
-                    <td>{{.UserAgent}}</td>
-                    <td>{{.CallerIP}}</td>
-                </tr>
-            {{end}}
-            </tbody>
-        </table>
-    </div>
+<div class="marketing activity-page">
+<div class="feature-toolbar"><h3>Log Entries{{if .hostname}} — {{.hostname}}{{end}}</h3></div>
+<p class="small text-muted">Latest result per consecutive run. IP or result changes start a new entry; × shows the number of repeated attempts.</p>
+<p class="alert alert-warning proxy-warning" {{if not .proxyWarning}}hidden{{end}}>{{.proxyWarning}}</p>
+<table class="table table-striped activity-table" data-live-list>
+<thead><tr><th>Status</th><th>Hostname</th><th>IP sent</th><th title="{{displayTimezone}}">🕒</th><th>User Agent</th><th>Caller IP</th><th>Repeats</th></tr></thead>
+<tbody>{{range .logs}}<tr>
+<td data-filter-value="{{if .Status}}Successful{{else}}Failed{{end}} {{.Code}} {{.Message}} {{.Source}}"><span tabindex="0" aria-label="{{.Code}} {{.Source}}: {{.Message}}" title="{{.Source}}: {{.Message}}" class="badge {{if .Status}}badge-success{{else}}badge-danger{{end}}">{{.Code}}</span><small class="d-block">{{.Source}}</small></td>
+<td>{{if .Hostname}}{{.Hostname}}{{else}}Not recorded{{end}}</td><td>{{.SentIP}}</td>
+<td title="{{.TimeStamp}}" class="entry-timestamp" data-sort-value="{{.TimeStamp.Unix}}">{{displayTime .TimeStamp}}</td>
+<td>{{.UserAgent}}</td><td>{{.CallerIP}}</td>
+<td data-sort-value="{{.Count}}" title="First attempt: {{displayTime .First}}">×{{.Count}}</td>
+</tr>{{end}}</tbody></table>
+</div>
 {{end}}

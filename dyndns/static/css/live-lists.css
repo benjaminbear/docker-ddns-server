@@ -1,0 +1,44 @@
+/* Shared list controls with normal document scrolling. */
+.list-controls {display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:.5rem 0;padding:.4rem 0;background:white;}
+.list-controls select {width:auto;}
+.list-summary {margin-right:auto;font-size:.85rem;color:#59636d;}
+.list-state {font-size:.8rem;color:#59636d;}
+.list-heading {display:flex;align-items:center;gap:.2rem;}
+.list-filter-toggle,.list-sort {border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;padding:0;cursor:pointer;}
+.list-sort {padding:0 .2rem;color:#59636d;}
+.list-filter-input {min-width:3rem;width:100%;margin-top:.35rem;font-weight:normal;}
+.list-table thead {background:white;}
+.list-table {border-collapse:separate;border-spacing:0;}
+.list-table td {overflow-wrap:anywhere;vertical-align:middle;}
+.list-table th {background:white;vertical-align:top;}
+.list-table [hidden],.live-items > [hidden] {display:none!important;}
+.live-cards .list-controls {position:static;}
+.card-filters {display:flex;gap:.75rem;flex-wrap:wrap;background:white;padding:.5rem 0;}
+.card-filters label {margin:0;min-width:8rem;flex:1;}
+.card-filters input {width:100%;}
+.list-empty {padding:1rem;text-align:center;}
+.list-refresh-error {color:#a32222;}
+.security-passkeys {text-align:right;}
+.security-summary .card-text {white-space:nowrap;font-size:.9rem;}
+.security-summary .card-body {padding:1rem;}
+.activity-table {font-size:.85rem;}
+.list-page .entry-filter-empty {display:none;}
+.header .logo {z-index:2;}
+@media(max-width:575.98px) {
+ .list-table {min-width:650px;}
+ .list-widget {overflow-x:auto;}
+ .entries-table,.entries-table thead,.entries-table tbody {display:table;}
+ .entries-table thead {display:table-header-group;}
+ .entries-table tbody {display:table-row-group;}
+ .entries-table tr,.entries-table thead tr {display:table-row;}
+ .entries-table th,.entries-table td {display:table-cell;width:auto!important;}
+ .entries-table th:not([aria-sort]) {display:table-cell;}
+ .entries-table td::before {display:none;}
+ .header .logo {max-height:88px;margin-left:0;}
+ .header nav {padding-top:70px;}
+}
+@media(max-height:500px) { .header .logo {max-height:75px;} .header {margin-bottom:1rem;} }
+.activity-table .entry-timestamp {white-space:nowrap;}
+.activity-table td:nth-child(2),.activity-table td:nth-child(3),.activity-table td:nth-child(6) {overflow-wrap:normal;}
+.activity-table td,.activity-table th {padding:.65rem .4rem;}
+.activity-table .badge[title] {cursor:help;}

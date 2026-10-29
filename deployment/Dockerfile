@@ -1,12 +1,13 @@
-FROM golang:1.22 as builder
+FROM golang:1.27-bookworm AS builder
 
 ENV GO111MODULE=on
 ENV GOPATH=/root/go
 RUN mkdir -p /root/go/src
 COPY dyndns /root/go/src/dyndns
 WORKDIR /root/go/src/dyndns
-RUN go mod tidy
-RUN GOOS=linux go build -o /root/go/bin/dyndns && go test -v
+RUN go mod download
+ENV GOFLAGS=-mod=readonly
+RUN GOOS=linux go build -o /root/go/bin/dyndns && go test ./...
 
 FROM debian:12-slim
 
@@ -17,7 +18,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 RUN chmod 770 /var/cache/bind
 COPY deployment/setup.sh /root/setup.sh
 RUN chmod +x /root/setup.sh
-COPY deployment/named.conf.options /etc/bind/named.conf.options
+COPY --chmod=644 deployment/named.conf.options /etc/bind/named.conf.options
 
 WORKDIR /root
 COPY --from=builder /root/go/bin/dyndns /root/dyndns

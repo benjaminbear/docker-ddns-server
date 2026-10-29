@@ -3,7 +3,10 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"os"
+	"strings"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/benjaminbear/docker-ddns-server/dyndns/handler"
 	"github.com/foolin/goview"
@@ -20,16 +23,42 @@ func main() {
 
 	e.Logger.SetLevel(log.ERROR)
 
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{Format: "${time_rfc3339} ${method} ${path} ${status} ${latency_human}\n"}))
 
-	// Set Renderer
+	displayLocation, err := time.LoadLocation(os.Getenv("TZ"))
+	if err != nil {
+		e.Logger.Warn("Invalid TZ; displaying host timestamps in UTC")
+		displayLocation = time.UTC
+	}
+
+	// Set Renderer with custom template functions
 	e.Renderer = echoview.New(goview.Config{
 		Root:      "views",
 		Master:    "layouts/master",
 		Extension: ".html",
 		Funcs: template.FuncMap{
+			"displayTimezone": func() string { return displayLocation.String() },
+			"displayTime":     func(t time.Time) string { return formatDisplayTime(t, displayLocation) },
 			"year": func() string {
 				return time.Now().Format("2006")
+			},
+			"hasPrefix": func(s, prefix string) bool {
+				return strings.HasPrefix(s, prefix)
+			},
+			"slice": func(s string, start, end int) string {
+				if start < 0 {
+					start = 0
+				}
+				if end > len(s) {
+					end = len(s)
+				}
+				if start > end {
+					return ""
+				}
+				return s[start:end]
+			},
+			"mod": func(i, j int) int {
+				return i % j
 			},
 		},
 		DisableCache: true,
@@ -49,63 +78,100 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 
+	// Parse environment variables and initialize session store
 	authAdmin, err := h.ParseEnvs()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 
-	// UI Routes
-	groupPublic := e.Group("/")
-	groupPublic.GET("*", func(c echo.Context) error {
-		//redirect to admin
-		return c.Redirect(301, "./admin/")
-	})
-	groupAdmin := e.Group("/admin")
-	if authAdmin {
-		groupAdmin.Use(middleware.BasicAuth(h.AuthenticateAdmin))
+	if err := h.InitAdminAuth(); err != nil {
+		e.Logger.Fatal(err)
 	}
 
+	if err := h.InitFeatures(); err != nil {
+		e.Logger.Error("Certificate features unavailable: ", err)
+	}
+	h.StartProxyLogs()
+	e.IPExtractor = h.TrustedProxies.ClientIP
+
+	// Apply IP blocker middleware globally
+	e.Use(h.IPBlockerMiddleware())
+
+	// Apply cleanup middleware
+	e.Use(h.CleanupMiddleware())
+
+	// Public redirect (root redirects to admin)
+	e.GET("/", func(c echo.Context) error {
+		return c.Redirect(http.StatusMovedPermanently, "/@/")
+	})
+
+	// Admin routes with session-based authentication and HTTPS redirect
+	groupAdmin := e.Group("/@")
+
+	// Apply HTTPS redirect middleware (only for admin routes)
+	groupAdmin.Use(h.HTTPSRedirectMiddleware())
+
+	// Login routes (no auth required)
+	groupAdmin.GET("/login", h.ShowLoginPage)
+	groupAdmin.POST("/login", h.HandleLogin)
+
+	// Logout route (no auth required - handles its own session check)
+	groupAdmin.GET("/logout", h.HandleLogout)
+
+	// Protected admin routes (require authentication)
+	if authAdmin {
+		groupAdmin.Use(h.SessionAuthMiddleware())
+	}
+
+	// Main admin pages
 	groupAdmin.GET("/", h.ListHosts)
+	groupAdmin.GET("/hosts", h.ListHosts)
 	groupAdmin.GET("/hosts/add", h.AddHost)
 	groupAdmin.GET("/hosts/edit/:id", h.EditHost)
-	groupAdmin.GET("/hosts", h.ListHosts)
-	groupAdmin.GET("/cnames/add", h.AddCName)
-	groupAdmin.GET("/cnames", h.ListCNames)
-	groupAdmin.GET("/logs", h.ShowLogs)
-	groupAdmin.GET("/logs/host/:id", h.ShowHostLogs)
-
-	// Rest Routes
 	groupAdmin.POST("/hosts/add", h.CreateHost)
 	groupAdmin.POST("/hosts/edit/:id", h.UpdateHost)
 	groupAdmin.GET("/hosts/delete/:id", h.DeleteHost)
-	//redirect to logout
-	groupAdmin.GET("/logout", func(c echo.Context) error {
-		// either custom url
-		if len(h.LogoutUrl) > 0 {
-			return c.Redirect(302, h.LogoutUrl)
-		}
-		// or standard url
-		return c.Redirect(302, "../")
-	})
+
+	// CName routes
+	groupAdmin.GET("/cnames", h.ListCNames)
+	groupAdmin.GET("/cnames/add", h.AddCName)
 	groupAdmin.POST("/cnames/add", h.CreateCName)
 	groupAdmin.GET("/cnames/delete/:id", h.DeleteCName)
 
-	// dyndns compatible api
-	// (avoid breaking changes and create groups for each update endpoint)
+	// Log routes
+	groupAdmin.GET("/logs", h.ShowLogs)
+	groupAdmin.GET("/logs/host/:id", h.ShowHostLogs)
+
+	// Security management routes
+	if authAdmin {
+		groupAdmin.GET("/security", h.ShowSecurityDashboard)
+		groupAdmin.GET("/security/blocked-ips", h.ShowBlockedIPs)
+		groupAdmin.GET("/security/failed-auths", h.ShowFailedAuths)
+		groupAdmin.POST("/security/unblock/:ip", h.UnblockIPHandler)
+	}
+
+	h.FeatureRoutes(e.Group("/@"))
+	h.AdminAuthRoutes(e)
+
+	// DynDNS API endpoints (HTTP allowed, BasicAuth required)
+	// These endpoints are used by routers/NVRs and need BasicAuth
 	updateRoute := e.Group("/update")
-	updateRoute.Use(middleware.BasicAuth(h.AuthenticateUpdate))
+	updateRoute.Use(h.UpdateAuthMiddleware())
 	updateRoute.GET("", h.UpdateIP)
+
 	nicRoute := e.Group("/nic")
-	nicRoute.Use(middleware.BasicAuth(h.AuthenticateUpdate))
+	nicRoute.Use(h.UpdateAuthMiddleware())
 	nicRoute.GET("/update", h.UpdateIP)
+
 	v2Route := e.Group("/v2")
-	v2Route.Use(middleware.BasicAuth(h.AuthenticateUpdate))
+	v2Route.Use(h.UpdateAuthMiddleware())
 	v2Route.GET("/update", h.UpdateIP)
+
 	v3Route := e.Group("/v3")
-	v3Route.Use(middleware.BasicAuth(h.AuthenticateUpdate))
+	v3Route.Use(h.UpdateAuthMiddleware())
 	v3Route.GET("/update", h.UpdateIP)
 
-	// health-check
+	// Health-check endpoint (no auth)
 	e.GET("/ping", func(c echo.Context) error {
 		u := &handler.Error{
 			Message: "OK",
@@ -115,4 +181,8 @@ func main() {
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func formatDisplayTime(t time.Time, location *time.Location) string {
+	return t.In(location).Format("01/02/2006 15:04")
 }

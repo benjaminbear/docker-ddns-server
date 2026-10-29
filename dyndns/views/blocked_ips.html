@@ -1,0 +1,98 @@
+{{define "content"}}
+<div class="container marketing">
+    <h3 class="text-center mb-4">Blocked IP Addresses</h3>
+
+    <div class="mb-3">
+        <a href="/@/security" class="btn btn-secondary">&larr; Back to Security Dashboard</a>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>IP Address</th>
+                <th>Blocked At</th>
+                <th>Blocked Until</th>
+                <th>Last Attempt</th>
+                <th>Failure Count</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .blockedIPs}}
+            <tr class="{{if .IsBlocked}}table-danger{{else}}table-secondary{{end}}">
+                <td><code>{{.IPAddress}}</code></td>
+                <td>{{.BlockedAt.Format "01/02/2006 15:04"}}</td>
+                <td>{{if .IsPermanent}}
+                    <span class="badge badge-dark">Permanent</span>
+                {{else}}
+                    {{.BlockedUntil.Format "01/02/2006 15:04"}}
+                {{end}}</td>
+                <td>{{.LastAttemptAt.Format "01/02/2006 15:04"}}</td>
+                <td><span class="badge badge-danger">{{.FailureCount}}</span></td>
+                <td style="max-width: 300px;">{{.Reason}}</td>
+                <td>
+                    {{if .IsBlocked}}
+                        <span class="badge badge-danger">Active</span>
+                    {{else}}
+                        <span class="badge badge-secondary">Expired</span>
+                    {{end}}
+                </td>
+                <td>
+                    {{if .IsBlocked}}
+                        <button class="btn btn-sm btn-warning unblock-btn" data-ip="{{.IPAddress}}">Unblock</button>
+                    {{else}}
+                        <span class="text-muted">N/A</span>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    {{if not .blockedIPs}}
+    <div class="alert alert-success text-center" role="alert">
+        <h4 class="alert-heading">No Blocked IPs</h4>
+        <p>There are currently no blocked IP addresses. Your site security is doing great!</p>
+    </div>
+    {{end}}
+</div>
+
+<script>
+$(document).ready(function() {
+    console.log('Blocked IPs page JavaScript loaded');
+
+    // Unblock button handler using event delegation
+    $(document).on('click', '.unblock-btn', function(e) {
+        e.preventDefault();
+        var button = $(this);
+        var ip = button.attr('data-ip');
+
+        console.log('Unblock clicked for IP:', ip);
+
+        if (confirm('Are you sure you want to unblock IP: ' + ip + '?')) {
+            // Disable button during request
+            button.prop('disabled', true).text('Unblocking...');
+
+            $.ajax({
+                url: '/@/security/unblock/' + encodeURIComponent(ip),
+                type: 'POST',
+                success: function(result) {
+                    console.log('Unblock success:', result);
+                    alert('IP ' + ip + ' has been unblocked successfully!');
+                    if (window.refreshLists) window.refreshLists(); else location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error('Unblock failed:', xhr.responseText);
+                    alert('Error unblocking IP: ' + (xhr.responseText || error));
+                    button.prop('disabled', false).text('Unblock');
+                }
+            });
+        }
+    });
+
+    console.log('Found', $('.unblock-btn').length, 'unblock buttons');
+});
+</script>
+{{end}}

@@ -3,7 +3,6 @@ package nswrapper
 import (
 	"bytes"
 	"errors"
-	"github.com/labstack/gommon/log"
 	"net"
 	"net/http"
 	"strings"
@@ -22,26 +21,13 @@ func GetIPType(ipAddr string) string {
 	}
 }
 
-// GetCallerIP searches for the "real" IP senders has actually.
-// If its a private address we won't use it.
-func GetCallerIP(r *http.Request) (string, error) {
-	log.Info("request", r.Header)
-	for _, h := range []string{"X-Real-Ip", "X-Forwarded-For"} {
-		addresses := strings.Split(r.Header.Get(h), ",")
-		// march from right to left until we get a public address
-		// that will be the address right before our proxy.
-		for i := len(addresses) - 1; i >= 0; i-- {
-			ip := strings.TrimSpace(addresses[i])
-			// header can contain spaces too, strip those out.
-			realIP := net.ParseIP(ip)
-			if !realIP.IsGlobalUnicast() || isPrivateSubnet(realIP) {
-				// bad address, go to next
-				continue
-			}
-			return ip, nil
-		}
+// GetCallerIP returns the client address using only configured trusted proxies.
+func GetCallerIP(r *http.Request, proxies TrustedProxies) (string, error) {
+	ip := proxies.ClientIP(r)
+	if net.ParseIP(ip) == nil {
+		return "", errors.New("invalid client address")
 	}
-	return "", errors.New("no match")
+	return ip, nil
 }
 
 // ShrinkUserAgent simply cuts the user agent information if its too long to display.

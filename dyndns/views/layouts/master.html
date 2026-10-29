@@ -9,6 +9,16 @@
 
     <title>{{.title}}</title>
 
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="/static/js/jquery-3.4.1.min.js"></script>
+    <!-- popper.js@1.16.0 -->
+    <script src="/static/js/popper.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/jquery-ui.min.js"></script>
+    <script src="/static/js/actions-1.0.0.js"></script>
+
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
 
@@ -17,6 +27,51 @@
 
     <!-- Custom styles for this template -->
     <link href="/static/css/narrow-jumbotron.css" rel="stylesheet">
+    <style>
+        body {
+            /* Add padding to the top of the body to prevent content from being hidden under the sticky header */
+            padding-top: 1rem;
+        }
+        .header {
+            /* Make the header sticky */
+            position: sticky;
+            top: 0;
+            /* Ensure it stays on top of other content */
+            z-index: 1020;
+            /* Give it a solid background to prevent content from showing through */
+            background-color: #fff;
+            /* Add some padding and a border for better visual separation */
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .logo {
+            /* Control the size of the logo image */
+            max-height: 128px;
+            width: auto;
+            position: fixed;
+            margin-top: -20px;
+            margin-left: -40px;
+        }
+        .copyleft {
+        display: inline-block;
+        -moz-transform: scale(-1, 1);
+        -webkit-transform: scale(-1, 1);
+        -o-transform: scale(-1, 1);
+        -ms-transform: scale(-1, 1);
+        transform: scale(-1, 1);
+        }
+
+        .header .nav-link { font-size:1.25rem; min-width:42px; text-align:center; padding:.4rem .55rem; }
+        .header .nav-link:focus-visible { outline:3px solid #0056b3; outline-offset:2px; }
+        .record-card { border:1px solid #dee2e6; border-radius:8px; padding:1rem; margin-bottom:1rem; }
+        .record-card textarea { font-family:monospace; }
+        .feature-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
+        .cert-names { overflow-wrap:anywhere; }
+        [data-record-sort][data-direction="ascending"]::after { content:" ↑"; }
+        [data-record-sort][data-direction="descending"]::after { content:" ↓"; }
+    </style>
+<link rel="stylesheet" href="/static/css/live-lists.css?v=2.2.2-scroll">
 </head>
 
 <body>
@@ -25,42 +80,32 @@
     <!-- Navigation -->
     <div class="header clearfix">
         <nav>
-            <ul class="nav nav-pills float-right">
-                <li class="nav-item">
-                    <a class="nav-link nav-hosts" href="/admin/hosts">Hosts</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-cnames" href="/admin/cnames">CNames</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-logs" href="/admin/logs">Logs</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link nav-logout" href="/admin/logout" id="logout">Logout</a>
-                </li>
+            <ul class="nav nav-pills float-right" aria-label="Main navigation">
+<li class="nav-item"><a class="nav-link nav-hosts" href="/@/hosts" title="Hosts" aria-label="Hosts"><span aria-hidden="true">⌂</span><span class="sr-only">Hosts</span></a></li>
+<li class="nav-item"><a class="nav-link nav-records" href="/@/records" title="DNS records" aria-label="DNS records"><span aria-hidden="true">☷</span><span class="sr-only">DNS records</span></a></li>
+<li class="nav-item"><a class="nav-link nav-certs" href="/@/certs" title="Certificates" aria-label="Certificates"><span aria-hidden="true">🛡</span><span class="sr-only">Certificates</span></a></li>
+<li class="nav-item"><a class="nav-link nav-logs" href="/@/logs" title="Update logs" aria-label="Update logs"><span aria-hidden="true">≡</span><span class="sr-only">Update logs</span></a></li>
+<li class="nav-item"><a class="nav-link nav-security" href="/@/security" title="Security" aria-label="Security"><span aria-hidden="true">🔒</span><span class="sr-only">Security</span></a></li>
+<li class="nav-item"><a class="nav-link nav-logout" href="/@/logout" title="Log out" aria-label="Log out"><span aria-hidden="true">⏏</span><span class="sr-only">Log out</span></a></li>
             </ul>
         </nav>
-        <h3 class="text-muted">{{.title}}</h3>
+        <!-- Conditionally display logo or title text -->
+        {{ if .logoPath }}
+            <a href="/@/hosts"><img src="{{.logoPath}}" alt="{{.title}}" class="logo"></a>
+        {{ else }}
+            <h3 class="text-muted">{{.title}}</h3>
+        {{ end }}
     </div>
 
     <!-- Page Content -->
     {{template "content" .}}
 
     <footer class="footer">
-        <p>&copy; {{.title}} {{year}}</p>
+        <p><span class="copyleft">&copy;</span> <a href="{{.poweredByUrl}}" target="_blank">{{.poweredBy}}</a> {{year}}</p>
     </footer>
 
 </div> <!-- /container -->
 
-<!-- Bootstrap core JavaScript
-================================================== -->
-<!-- Placed at the end of the document so the pages load faster -->
-<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-<script src="/static/js/jquery-3.4.1.min.js"></script>
-<!-- popper.js@1.16.0 -->
-<script src="/static/js/popper.min.js"></script>
-<script src="/static/js/bootstrap.min.js"></script>
-<script src="/static/js/jquery-ui.min.js"></script>
-<script src="/static/js/actions-1.0.0.js"></script>
+<script src="/static/js/live-lists.js?v=2.2.2-scroll"></script>
 </body>
 </html>

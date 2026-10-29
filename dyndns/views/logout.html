@@ -1,0 +1,202 @@
+{{define "content"}}
+<style>
+    /* Hide the header/navigation on logout page */
+    .header {
+        display: none !important;
+    }
+
+    /* Override container styles for full-page logout */
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* Full-page background */
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        min-height: 100vh;
+    }
+
+    .logout-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .logout-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        padding: 3rem 2rem;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .logout-icon {
+        font-size: 64px;
+        margin-bottom: 1.5rem;
+    }
+
+    h1 {
+        color: #333;
+        margin-bottom: 1rem;
+        font-size: 1.75rem;
+    }
+
+    p {
+        color: #666;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        font-weight: 500;
+        transition: transform 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        border-radius: 5px;
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .llogo {
+        max-height: 80px;
+        max-width: 200px;
+        margin-bottom: 1rem;
+    }
+
+    /* Hide footer on logout page */
+    .footer {
+        display: none !important;
+    }
+
+    .redirect-notice {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: #f0f0f0;
+        border-radius: 5px;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .countdown {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+        margin: 0.5rem 0;
+    }
+
+    .redirect-url {
+        color: #667eea;
+        text-decoration: none;
+        word-break: break-all;
+    }
+
+    .redirect-url:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="logout-wrapper">
+    <div class="logout-container">
+        {{if .logoPath}}
+            <img src="{{.logoPath}}" alt="{{.title}}" class="llogo">
+        {{end}}
+
+        <div class="logout-icon">👋</div>
+        <h1>Logged Out Successfully</h1>
+        <p>Your session has been ended and you have been securely logged out.</p>
+
+        {{if .logoutUrl}}
+        <div class="redirect-notice">
+            <p style="margin-bottom: 0.5rem;">Redirecting in <span class="countdown" id="countdown">7</span> seconds...</p>
+            <p style="margin-bottom: 0.5rem; font-size: 0.85rem;">
+                to: <a href="{{.logoutUrl}}" class="redirect-url">{{.logoutUrl}}</a>
+            </p>
+            <button onclick="cancelRedirect()" class="btn btn-sm btn-outline-secondary mt-2">Cancel Auto-Redirect</button>
+        </div>
+        {{end}}
+
+        <a href="/@/login" class="btn btn-login mt-3">Log In Again</a>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Check if logout URL is provided
+    var logoutUrl = {{if .logoutUrl}}"{{.logoutUrl}}"{{else}}null{{end}};
+    var redirectTimer = null;
+    var countdownInterval = null;
+    var secondsLeft = 7;
+
+    if (logoutUrl) {
+        console.log('Auto-redirect enabled. Redirecting to:', logoutUrl, 'in', secondsLeft, 'seconds');
+
+        // Update countdown display
+        countdownInterval = setInterval(function() {
+            secondsLeft--;
+            var countdownElement = document.getElementById('countdown');
+            if (countdownElement) {
+                countdownElement.textContent = secondsLeft;
+            }
+
+            if (secondsLeft <= 0) {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+
+        // Set redirect timer
+        redirectTimer = setTimeout(function() {
+            console.log('Redirecting to:', logoutUrl);
+            window.location.href = logoutUrl;
+        }, 7000); // 7 seconds
+    } else {
+        console.log('No logout URL configured. Staying on logout page.');
+    }
+
+    // Function to cancel redirect
+    window.cancelRedirect = function() {
+        if (redirectTimer) {
+            clearTimeout(redirectTimer);
+            redirectTimer = null;
+        }
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+
+        var redirectNotice = document.querySelector('.redirect-notice');
+        if (redirectNotice) {
+            redirectNotice.innerHTML = '<p style="color: #28a745; margin: 0;">✓ Auto-redirect cancelled</p>';
+        }
+
+        console.log('Auto-redirect cancelled by user');
+    };
+
+    // Cancel redirect if user clicks "Log In Again" button
+    var loginButton = document.querySelector('.btn-login');
+    if (loginButton) {
+        loginButton.addEventListener('click', function() {
+            if (redirectTimer) {
+                clearTimeout(redirectTimer);
+            }
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+        });
+    }
+})();
+</script>
+{{end}}

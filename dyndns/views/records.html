@@ -1,0 +1,25 @@
+{{define "content"}}
+<div class="marketing">
+<div class="feature-toolbar"><h2>DNS records</h2><form method="get" action="/@/records"><label for="zone-picker" class="sr-only">Zone</label><select id="zone-picker" class="form-control" name="zone" onchange="this.form.submit()"><option value="all" {{if eq .zone "all"}}selected{{end}}>All zones</option>{{range .zones}}<option {{if eq . $.zone}}selected{{end}}>{{.}}</option>{{end}}</select></form></div>
+<p>Manage DNS records {{if ne .zone "all"}}in <strong>{{.zone}}</strong>{{else}}across all managed zones{{end}}. CNAME aliases are managed here too; dynamic addresses remain in Hosts. Enter <code>@</code> for the zone root.</p>
+<details class="record-card" {{if not .sets}}open{{end}}><summary><strong>Add or replace a record set</strong></summary>
+<form method="post" action="/@/records" class="mt-3">
+<input type="hidden" name="csrf" value="{{.csrf}}">{{if eq .zone "all"}}<div class="form-group"><label for="new-record-zone">Zone</label><select id="new-record-zone" class="form-control" name="zone" required><option value="" disabled selected>Choose zone</option>{{range .zones}}<option>{{.}}</option>{{end}}</select></div>{{else}}<input type="hidden" name="zone" value="{{.zone}}">{{end}}
+<div class="form-row"><div class="form-group col-md-6"><label for="record-name">Name</label><input id="record-name" class="form-control" name="name" required placeholder="@, mail, _dmarc, _sip._tcp"></div>
+<div class="form-group col-md-3"><label for="record-type">Type</label><select id="record-type" name="type" class="form-control">{{range .types}}<option {{if eq . $.selectedType}}selected{{end}}>{{.}}</option>{{end}}</select></div>
+<div class="form-group col-md-3"><label for="record-ttl">TTL (seconds)</label><input id="record-ttl" class="form-control" name="ttl" type="number" min="20" max="86400" value="600" required></div></div>
+<label for="record-values">Values — one per line</label><textarea id="record-values" class="form-control" name="values" rows="3" required aria-describedby="record-help"></textarea>
+<p id="record-help" class="small text-muted mt-2">TXT: plain text, without surrounding quotes. MX: <code>10 mail.example.com</code>. SRV: <code>10 5 443 service.example.com</code>. CAA: <code>0 issue letsencrypt.org</code>. Targets are full domain names. Saving replaces all values for this name and type.</p>
+<button class="btn btn-primary">Save record set</button></form></details>
+<div class="record-list live-items" data-fields="name,recordType,values,ttl" data-labels="Hostname,Type,Target / value,TTL">
+{{range .sets}}<form method="post" action="/@/records" class="record-card" data-record-type="{{.Type}}" data-name="{{.Name}}.{{.Zone}}" data-values="{{.Values}}" data-ttl="{{.TTL}}">
+<input type="hidden" name="csrf" value="{{$.csrf}}"><input type="hidden" name="zone" value="{{.Zone}}"><input type="hidden" name="name" value="{{.Name}}"><input type="hidden" name="type" value="{{.Type}}">
+<h3 class="h5">{{if eq .Name "@"}}{{.Zone}}{{else}}{{.Name}}.{{.Zone}}{{end}} <span class="badge badge-secondary">{{.Type}}</span></h3>
+<label class="d-block">Values<textarea class="form-control" name="values" rows="2">{{.Values}}</textarea></label>
+<label>TTL<input class="form-control" name="ttl" type="number" min="20" max="86400" value="{{.TTL}}" required></label>
+<div><button class="btn btn-outline-primary">Save changes</button> <button name="action" value="delete" class="btn btn-outline-danger" onclick="return confirm('Delete this record set?')">Delete</button></div></form>{{else}}<p class="text-muted">No records yet in this zone.</p>{{end}}
+</div>
+
+<script>document.querySelector('.nav-records').classList.add('active');</script>
+</div>
+{{end}}

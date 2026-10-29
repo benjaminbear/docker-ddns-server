@@ -5,7 +5,7 @@
 [ -z "$DDNS_PARENT_NS" ] && echo "DDNS_PARENT_NS not set" && exit 1;
 [ -z "$DDNS_DEFAULT_TTL" ] && echo "DDNS_DEFAULT_TTL not set" && exit 1;
 
-DDNS_IP=$(curl icanhazip.com)
+DDNS_IP=$(curl -4 icanhazip.com)
 
 for d in ${DDNS_DOMAINS//,/ }
 do

@@ -1,0 +1,17 @@
+{{define "content"}}
+<div class="marketing">
+<h2>Passkeys</h2>
+<p>Use your device’s fingerprint, face recognition, screen lock or security key to sign in. Private keys stay with your authenticator.</p>
+<p>Sign in again before adding or removing a passkey; these actions require a sign-in within the last five minutes.</p>
+<form id="passkey-register" class="feature-toolbar">
+ <label for="passkey-name">Passkey name</label><input id="passkey-name" class="form-control" style="width:auto" maxlength="80" required placeholder="MacBook or security key">
+ <button class="btn btn-primary" type="submit">Add passkey</button>
+</form>
+<p id="passkey-message" role="status" class="text-danger"></p>
+{{range .passkeys}}
+<div class="record-card feature-toolbar"><strong>{{.Name}}</strong><span>Added {{.CreatedAt.Format "2006-01-02"}}</span>{{if .LastUsedAt}}<span>Last used {{.LastUsedAt.Format "2006-01-02"}}</span>{{end}}<button type="button" class="btn btn-outline-danger passkey-revoke" data-id="{{.ID}}">Remove</button></div>
+{{else}}<p>No passkeys registered. Add one while signed in with your existing admin account.</p>{{end}}
+<p><a href="/@/security">Back to security</a> · <a href="/@/logout">Sign out</a></p>
+<script src="/static/js/passkeys.js"></script>
+</div>
+{{end}}

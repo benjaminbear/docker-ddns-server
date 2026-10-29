@@ -1,25 +1,26 @@
 {{define "content"}}
-<div class="container marketing">
-    <h3 class="text-center mb-4">DNS CName Entries</h3>
-    <table class="table table-striped text-center">
-        <thead>
-        <tr>
-            <th>Hostname</th>
-            <th>Target</th>
-            <th>TTL</th>
-            <th><button class="addCName btn btn-primary">Add CName Entry</button></th>
-        </tr>
-        </thead>
+<link rel="stylesheet" href="/static/css/entry-list.css">
+<div class="marketing">
+    <div class="entries-toolbar"><h3>DNS CName Entries</h3><div class="entries-toolbar-actions"><label class="sr-only" for="entry-zone-filter">Filter by zone</label><select id="entry-zone-filter" class="custom-select custom-select-sm entry-zone-filter"><option value="">All zones</option>{{range .domains}}<option value="{{.}}">{{.}}</option>{{end}}</select><button type="button" class="entry-sort-reset btn btn-outline-secondary entry-icon" title="Restore original entry order" aria-label="Restore original entry order" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 9M3 3v7h7"/></svg></button><button class="addCName btn btn-primary btn-sm">Add CName Entry</button></div></div>
+    <table class="table table-striped text-center entries-table cnames-table">
+        <thead><tr>
+            <th scope="col" class="entry-name" aria-sort="none"><button type="button" class="entry-sort" data-sort="hostname">Hostname</button></th>
+            <th scope="col" class="entry-target" aria-sort="none"><button type="button" class="entry-sort" data-sort="target">Target</button></th>
+            <th scope="col" class="entry-ttl" aria-sort="none"><button type="button" class="entry-sort" data-sort="ttl">TTL</button></th>
+            <th scope="col" class="entry-actions"><span class="sr-only">Actions</span></th>
+        </tr></thead>
         <tbody>
         {{range .cnames}}
-        <tr>
-            <td>{{.Hostname}}.{{.Target.Domain}}</td>
-            <td>{{.Target.Hostname}}.{{.Target.Domain}}</td>
-            <td>{{.Ttl}}</td>
-            <td><button id="{{.ID}}" class="deleteCName btn btn-outline-secondary btn-sm"><img src="/static/icons/trash.svg" alt="" width="16" height="16" title="Delete"></button></td>
+        <tr data-zone="{{.Target.Domain}}">
+            <td data-label="Hostname" class="entry-name">{{.Hostname}}.{{.Target.Domain}}</td>
+            <td data-label="Target" class="entry-target">{{.Target.Hostname}}.{{.Target.Domain}}</td>
+            <td data-label="TTL" data-sort-value="{{.Ttl}}">{{.Ttl}}</td>
+            <td data-label="Actions"><button id="{{.ID}}" class="deleteCName btn btn-outline-secondary btn-sm entry-icon" title="Delete CNAME" aria-label="Delete CNAME"><img src="/static/icons/trash.svg" alt="" width="16" height="16"></button></td>
         </tr>
         {{end}}
         </tbody>
     </table>
+    <p class="entry-filter-empty text-muted" role="status" hidden>No CNAMEs in this zone.</p>
+    <script src="/static/js/entry-list.js"></script>
 </div>
 {{end}}

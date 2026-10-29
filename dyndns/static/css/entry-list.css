@@ -1,0 +1,42 @@
+.entries-toolbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+.entries-toolbar h3 { margin:0; }
+.entries-toolbar-actions { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.entry-zone-filter { width:auto; max-width:100%; }
+.entries-table tr[hidden] { display:none; }
+.entries-table { width:100%; table-layout:fixed; }
+.entries-table th, .entries-table td { padding:.65rem .4rem; vertical-align:middle; overflow-wrap:anywhere; }
+.entry-sort { color:inherit; font:inherit; font-weight:inherit; border:0; background:none; padding:0; cursor:pointer; text-align:inherit; }
+.entry-sort::after { content:' ↕'; font-size:.75em; color:#6c757d; }
+[aria-sort="ascending"] .entry-sort::after { content:' ↑'; }
+[aria-sort="descending"] .entry-sort::after { content:' ↓'; }
+.entry-sort:focus-visible { outline:2px solid #0056b3; outline-offset:3px; }
+.entries-table .entry-name { text-align:left; width:26%; }
+.entries-table .entry-ip { width:21%; }
+.entries-table .entry-ttl { width:8%; }
+.entries-table .entry-updated { width:19%; }
+.entries-table .entry-cert { width:7%; }
+.entries-table .entry-actions { width:19%; }
+.entry-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; }
+.entry-icon svg { width:16px; height:16px; }
+.entry-action-buttons { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; }
+@media (max-width:575.98px) {
+    .entries-toolbar { align-items:flex-start; }
+    .entries-toolbar h3 { font-size:1.3rem; }
+    .entries-table thead { display:block; }
+    .entries-table thead tr { display:flex; flex-wrap:wrap; border:0; padding:0; gap:.5rem; }
+    .entries-table th { width:auto !important; border:0; }
+    .entries-table th:not([aria-sort]) { display:none; }
+    .entries-table, .entries-table tbody, .entries-table tr { display:block; width:100%; }
+    .entries-table tr { border:1px solid #dee2e6; margin-bottom:1rem; padding:.5rem; }
+    .entries-table td { display:grid; grid-template-columns:5.5rem minmax(0,1fr); gap:.5rem; width:100% !important; border:0; text-align:left; }
+    .entries-table td::before { content:attr(data-label); font-weight:600; }
+    .entry-action-buttons { justify-content:flex-start; }
+}
+
+.entries-table .entry-target { text-align:left; width:44%; }
+.cnames-table .entry-name { width:34%; }
+.cnames-table .entry-ttl { width:12%; }
+.cnames-table .entry-actions { width:10%; }
+
+.entries-table .entry-timestamp { white-space:nowrap; }
+.entry-time-sort svg { width:20px; height:20px; vertical-align:middle; }

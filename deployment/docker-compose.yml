@@ -1,10 +1,17 @@
 version: '3'
 services:
   ddns:
-    image: bbaerthlein/docker-ddns-server:latest
-    restart: always
+    image: docker-ddns-server:local
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    restart: unless-stopped
     environment:
       DDNS_ADMIN_LOGIN: 'admin:$$3$$abcdefg'
+      DDNS_SESSION_SECRET: ${DDNS_SESSION_SECRET:?Set a random secret of at least 32 bytes}
+      # Optional: set this after adding the read-only log mount below.
+      DDNS_NGINX_LOG_DIR: ${DDNS_NGINX_LOG_DIR:-}
+      DDNS_TRUSTED_PROXIES: ${DDNS_TRUSTED_PROXIES:-}
       DDNS_DOMAINS: 'dyndns.example.com'
       DDNS_PARENT_NS: 'ns.example.com'
       DDNS_DEFAULT_TTL: '3600'
@@ -15,3 +22,5 @@ services:
     volumes:
        - ./bind-data:/var/cache/bind
        - ./database:/root/database
+       # Optional: mount the directory (not a single file) so log rotation works.
+       # - /path/to/ddns/nginx/logs:/var/log/ddns-nginx:ro
